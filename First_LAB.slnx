@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Interfaces/Interfaces.csproj" Id="749d43d2-555c-48be-aa0b-9e9d68d82a20" />
+  <Project Path="ProductLib/ProductLib.csproj" />
+  <Project Path="ProgramOfLab1/ProgramOfLab1.csproj" />
+</Solution>
