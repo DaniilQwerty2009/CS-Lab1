@@ -1,10 +1,12 @@
-﻿using System;
-using Interfaces;
+﻿using Interfaces;
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace ProductLib
 {
     // Класс-изделие
-    abstract public class Product : IValidate
+    abstract public class Product
     {
         private string name;    // название
         private long article;   // код
@@ -13,67 +15,102 @@ namespace ProductLib
         protected Product(string name, long article, string type)
         {
             //Проверка на формат строк и чисел (только буквенные знаки, пробелы и натуральные числа)
-            if(!StringValidate(name))
+            if(!Validator.StringValidate(name))
             {
-                throw new WrongFormatExeption(name);
+                var ex = new WrongFormatExeption();
+                ex.Value = name;
+                throw ex;
             }
-            else if(!StringValidate(type))
+            else if(!Validator.StringValidate(type))
             {
-                throw new WrongFormatExeption(type);
+                var ex = new WrongFormatExeption();
+                ex.Value = type;
+                throw ex;
+
             }
-            else if(!NumberValidate(article))
+            else if(!Validator.NumberValidate(article))
             {
-                throw new WrongFormatExeption(article.ToString());
+                var ex = new WrongFormatExeption();
+                ex.Value = article.ToString();
+                throw ex;
             }
 
             this.name = name;
+
             this.article = article;
-            this.type = type;
+            this.type = type.ToLower();
         }
 
+        protected Product(Product source) : this(source.Name, source.Article, source.Type)
+        {        }
         // Свойства
         public string Name
         {
             get { return name; }
+            set 
+            {
+                if (!Validator.StringValidate(value))
+                {
+                    var ex = new WrongFormatExeption();
+                    ex.Value = value;
+                    throw ex;
+                }
+                name =  value;
+            }
         }
+
         public long Article
         {
             get { return article; }
+            set 
+            {
+                if (!Validator.NumberValidate(value))
+                {
+                    var ex = new WrongFormatExeption();
+                    ex.Value = value.ToString();
+                    throw ex;
+                }
+                article = value; 
+            }
         }
 
         public string Type
         {
             get { return type; }
-        }
-
-        // Проверка: только символы букв для строк 
-        public bool StringValidate(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-                return false;
-            
-            foreach(char c in value)
+            set 
             {
-                if (!char.IsLetter(c) && !char.IsWhiteSpace(c))
-                    return false;
+                if (!Validator.StringValidate(value))
+                {
+                    var ex = new WrongFormatExeption();
+                    ex.Value = value;
+                    throw ex;
+
+                }
+                type = value; 
             }
-            
-            return true;
         }
 
-        // Проверка: только натуральные числа для чисел
-        public bool NumberValidate(long number)
-        {
-            if(number < 0) 
-                return false;
-            return true;
-        }
 
         // Вывод информации об объекте в терминал
         public virtual void PrintInfo()
         {
             Console.Write(name + '/' + article + '/' + type);
         }
+
+        public override string ToString()
+        {
+            return name + ", " + type;
+        }
+    
+        public virtual void CopyFrom(Product source)
+        {
+            this.name = source.name;
+            this.article = source.article;
+            this.type = source.type;
+        }
+
+        public abstract Product Clone();
+
     }
     
 }
