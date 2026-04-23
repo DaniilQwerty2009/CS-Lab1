@@ -1,5 +1,6 @@
 using Interfaces;
 using ProductLib;
+using System.ComponentModel;
 using System.Drawing.Text;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -12,7 +13,22 @@ namespace LabApp
     enum SpeedOfProductVisualisation { SomePixelPerSecond = 30};
     enum SizeOfPaintedImgEnum {  X = 50, Y = 50};
 
-    internal enum TypesOfProduct { Мебель = 1, Посуда = 2 };
+    internal enum TypesOfProduct { [Description("Мебель")] Furniture = 1, [Description("Посуда")] Dish = 2 };
+
+    public class TypeDisplay
+    {
+        TypesOfProduct type;
+        TypeDisplay(TypesOfProduct type)
+        {
+            this.type = type;
+        }
+
+        //public string Text
+        //{
+        //    get { return type.
+        //}
+    }
+
 
     // Основная форма приложения
     public partial class ApplicationForm : Form

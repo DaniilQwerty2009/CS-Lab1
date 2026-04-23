@@ -34,7 +34,10 @@ namespace LabApp
             ComponentsEnable = false;
 
             foreach(TypesOfProduct s in Enum.GetValues(typeof(TypesOfProduct)))
-                comboBoxTypes.Items.Add(s);
+            {
+                if()
+            }
+                
         }
 
         public Product Product
