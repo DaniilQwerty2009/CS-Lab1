@@ -1,7 +1,9 @@
 using Interfaces;
 using ProductLib;
 using System.Drawing.Text;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Security;
 using System.Timers;
 using System.Windows.Forms.VisualStyles;
 
@@ -47,30 +49,69 @@ namespace LabApp
 
             worker2 = new();
 
-            //Dishes d = new("f", 1, "g", new(0, 0));
-            //Furniture s = new("f", 1, "g", ["g"], new(0, 0));
 
-            //listProduct.Items.Add(s);
-            //listProduct.Items.Add(d);
-
-            //products.Add(d);
-            //products.Add(s);
-
-            //Mover mover = new LineralMover(s, new(0,0), ((int)SpeedOfProductVisualisation.SomePixelPerSecond));
-            //worker1.AddMover(mover);
-
-            //mover = new RandomMover(s, ((int)SpeedOfProductVisualisation.SomePixelPerSecond), new(panelVisualisation.Width, panelVisualisation.Height));
-            //worker2.AddMover(mover);
-
+            CreateExampleProducts(2, 2);
 
             worker1.AnotherPartOfWorkDone += RedrawPanelVisualisation;
             worker2.AnotherPartOfWorkDone += RedrawPanelVisualisation;
+
+            worker1.StateChanged += FirstThreadStateTextBoxUpdate;
+            worker2.StateChanged += SecondThreadStateTextBoxUpdate;
             //worker1.ClearingMoverTrace += ClearPrveviosVisualisation;
             //worker2.ClearingMoverTrace += ClearPrveviosVisualisation;
 
             // Устанавливаем доступность кнопок
             UpdateButtonAccessibility();
-            UpdateThreadsStatusTextBox();
+
+            FirstThreadStateTextBoxUpdate(StateOfWork.Unstarted);
+            SecondThreadStateTextBoxUpdate(StateOfWork.Unstarted);
+        }
+
+        private void CreateExampleProducts(uint countOfFurniture, uint countOfDishes)
+        {
+            Product createdObject;
+            List<string> comp = new();
+            Point beginPos = new();
+            Mover mov;
+            Point borderOfVisual = new();
+            borderOfVisual.X = panelVisualisation.Width - ((int)SizeOfPaintedImgEnum.X);
+            borderOfVisual.Y = panelVisualisation.Height - ((int)SizeOfPaintedImgEnum.Y);
+            for (int i = 0; i < 4; ++i)
+            {
+                string c = $"Компонент {i}";
+                comp.Add(c);
+            }
+
+            for (int i = 0; i < countOfFurniture; ++i)
+            {
+                string n = $"Мебель {i + 1}";
+                beginPos.X = Random.Shared.Next(borderOfVisual.X);
+                beginPos.Y = Random.Shared.Next(borderOfVisual.Y);
+
+                createdObject = new Furniture(n, i + 10, "Мебель", comp, beginPos);
+
+                products.Add(createdObject);
+                listProduct.Items.Add(createdObject);
+
+                mov = new LineralMover((IDrawable)createdObject, new(0, 0), ((int)SpeedOfProductVisualisation.SomePixelPerSecond));
+                worker1.AddMover(mov);
+            }
+
+            for (int i = 0; i < countOfDishes; ++i)
+            {
+                string n = $"Посуда {i + 1}";
+
+                beginPos.X = Random.Shared.Next(borderOfVisual.X);
+                beginPos.Y = Random.Shared.Next(borderOfVisual.Y);
+
+                createdObject = new Dishes(n, i + 1, "Посуда", beginPos);
+
+                products.Add(createdObject);
+                listProduct.Items.Add(createdObject);
+
+                mov = new RandomMover((IDrawable)createdObject, ((int)SpeedOfProductVisualisation.SomePixelPerSecond), borderOfVisual);
+                worker2.AddMover(mov);
+            }
         }
 
         // Кнопки Удалить, Редактировать, Просмотр не доступны для нажатия до выбора элемента
@@ -99,55 +140,33 @@ namespace LabApp
         }
 
 
-        private void UpdateThreadsStatusTextBox()
+        private void FirstThreadStateTextBoxUpdate(StateOfWork state)
         {
-            ThreadState state;
-            TextBox changedTextBox;
-
-            if (firstThread != null)
-                state = firstThread.ThreadState;
-            else
-                state = ThreadState.Unstarted;
-
-            changedTextBox = textboxFirstThreadStatus;
-
-            switch (state)
+            if (textboxFirstThreadState.InvokeRequired)
             {
-                case (ThreadState.Unstarted):
-                    changedTextBox.Text = "Не запущен";
-                    break;
-                case (ThreadState.Running):
-                    changedTextBox.Text = "В работе";
-                    break;
-                case (ThreadState.Stopped):
-                    changedTextBox.Text = "Завершен";
-                    break;
-                case (ThreadState.WaitSleepJoin):
-                    changedTextBox.Text = "На паузе";
-                    break;
+                textboxFirstThreadState.Invoke(() =>
+                {
+                    textboxFirstThreadState.Text = state.ToString();
+                });
             }
-
-            if (secondThread != null)
-                state = secondThread.ThreadState;
             else
-                state = ThreadState.Unstarted;
-
-            changedTextBox = textboxSecondThreadStatus;
-
-            switch (state)
             {
-                case (ThreadState.Unstarted):
-                    changedTextBox.Text = "Не запущен";
-                    break;
-                case (ThreadState.Running):
-                    changedTextBox.Text = "В работе";
-                    break;
-                case (ThreadState.Stopped):
-                    changedTextBox.Text = "Завершен";
-                    break;
-                case (ThreadState.WaitSleepJoin):
-                    changedTextBox.Text = "На паузе";
-                    break;
+                textboxFirstThreadState.Text = state.ToString();
+            }
+        }
+
+        private void SecondThreadStateTextBoxUpdate(StateOfWork state)
+        {
+            if (textboxSecondThreadState.InvokeRequired)
+            {
+                textboxSecondThreadState.Invoke(() =>
+                {
+                    textboxSecondThreadState.Text = state.ToString();
+                });
+            }
+            else
+            {
+                textboxSecondThreadState.Text = state.ToString();
             }
         }
 
@@ -227,12 +246,22 @@ namespace LabApp
 
                 if (decition == DialogResult.Yes)
                 {
+                    Mover removingMover = null;
+
                     if (selectedInListProduct is Furniture _)
                     {
                         foreach (Mover m in worker1.Movers)
                         {
                             if (m.Visual == selectedInListProduct)
-                                worker1.RemoveMover(m);
+                            {
+                                removingMover = m;
+                                break;
+                            }
+                        }
+
+                        if(removingMover != null)
+                        {
+                            worker1.RemoveMover(removingMover);
                         }
                     }
 
@@ -241,7 +270,13 @@ namespace LabApp
                         foreach (Mover m in worker2.Movers)
                         {
                             if (m.Visual == selectedInListProduct)
-                                worker2.RemoveMover(m);
+                            {
+                                removingMover = m;
+                                break;
+                            }
+
+                            if(removingMover != null)
+                                worker2.RemoveMover(removingMover);
                         }
                     }
 
@@ -316,45 +351,11 @@ namespace LabApp
 
         public void RedrawPanelVisualisation(Object? sender, EventArgs e)
         {
-            //if (worker1.Movers.Count() != 0)
-            //{
-            //    if (!worker1.Paused)
-            //    {
-            //        foreach (Mover mover in worker1.Movers)
-            //        {
-            //            PointF leftTopPoint = mover.Visual.VisualPosition;
-
-            //            Size rightBottonPoint = mover.Visual.SizeOfVisual;
-
-            //            RectangleF areaToReapint = new(leftTopPoint, rightBottonPoint);
-
-            //            Region regionToRepaint = new(areaToReapint);
-
-            //            panelVisualisation.Invalidate(regionToRepaint);
-            //        }
-            //    }
-
-            //    if (!worker2.Paused)
-            //    {
-            //        foreach (Mover mover in worker2.Movers)
-            //        {
-            //            PointF leftTopPoint = mover.Visual.VisualPosition;
-
-            //            Size rightBottonPoint = mover.Visual.SizeOfVisual;
-
-            //            RectangleF areaToReapint = new(leftTopPoint, rightBottonPoint);
-
-            //            Region regionToRepaint = new(areaToReapint);
-
-            //            panelVisualisation.Invalidate(regionToRepaint);
-            //        }
-            //    }
-            //}
-            panelVisualisation.Invalidate();
-
+            if (InvokeRequired)
+                panelVisualisation.BeginInvoke(() => panelVisualisation.Invalidate());
+            else
+                panelVisualisation.Invalidate();
         }
-
-
 
 
         private void BtnStart_Click(object sender, EventArgs e)
@@ -372,37 +373,33 @@ namespace LabApp
 
 
             //if (firstThread.ThreadState == (ThreadState.Unstarted &~ThreadState.Background))
-                firstThread.Start();
+            firstThread.Start();
             //if (secondThread.ThreadState == (ThreadState.Unstarted & ~ThreadState.Background))
-                secondThread.Start();
+            secondThread.Start();
 
-            UpdateThreadsStatusTextBox();
-
-            Console.WriteLine("After Start");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("After Start");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
 
             btnStart.Enabled = false;
         }
 
         private void BtnfirstThreadPause_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Before Pause");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine("Before Pause");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
 
             if (worker1.Working)
                 worker1.Pause();
 
-            UpdateThreadsStatusTextBox();
-
-            Console.WriteLine("After Pause");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine("After Pause");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
         }
 
         private void BtnFirstThreadContinue_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Before Contuinue");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine("Before Contuinue");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
 
             if (worker1.Working)
                 worker1.Continue();
@@ -410,26 +407,23 @@ namespace LabApp
             lock (Worker.syncObject)
                 Monitor.PulseAll(Worker.syncObject);
 
-            UpdateThreadsStatusTextBox(); // гарантированно ли изменение статуса после Pulse к моменту вызова функции????
-
-            Console.WriteLine("After Contuinue");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine("After Contuinue");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
         }
 
         private void BtnSecondThreadContinue_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Before Continue");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("Before Continue");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+
             if (worker2.Working)
                 worker2.Continue();
 
             lock (Worker.syncObject)
                 Monitor.PulseAll(Worker.syncObject);
 
-            UpdateThreadsStatusTextBox(); // гарантированно ли изменение статуса после Pulse к моменту вызова функции???
-
-            Console.WriteLine("After Continue");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("After Continue");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
         }
 
         private void BtnSecondThreadPause_Click(object sender, EventArgs e)
@@ -440,17 +434,15 @@ namespace LabApp
             if (worker2.Working)
                 worker2.Pause();
 
-            UpdateThreadsStatusTextBox();
-
-            Console.WriteLine("After Continue");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("After Continue");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
         }
 
         private void BtnStop_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Before Stop");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("Before Stop");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
 
             lock (Worker.syncObject)
             {
@@ -462,12 +454,9 @@ namespace LabApp
 
             btnStart.Enabled = true;
 
-            UpdateThreadsStatusTextBox();
-            Console.WriteLine("After Stop");
-            Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("After Stop");
+            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
         }
-
-
     }
 }

@@ -8,6 +8,8 @@ using System.Drawing;
 
 namespace ProductLib
 {
+    public enum StateOfWork {Unstarted, Running, Paused, Finished};
+   
     public class Worker
     {
         List<Mover> movers = new();
@@ -16,15 +18,21 @@ namespace ProductLib
 
         volatile bool paused;
 
+        StateOfWork state = StateOfWork.Unstarted;
+
         public static object syncObject = new object();
 
+        public event EventHandler? AnotherPartOfWorkDone;
+
+        public delegate void StateAcualisation(StateOfWork state);
+        public event StateAcualisation? StateChanged;
         public Worker()
         {   } 
 
-        public Worker(List<Mover> movers)
-        {
-            this.movers = movers;
-        }
+        //public Worker(List<Mover> movers)
+        //{
+        //    this.movers = movers;
+        //}
 
         public bool Working
         {
@@ -51,10 +59,7 @@ namespace ProductLib
                 movers.Remove(mover);
         }
 
-        public event EventHandler? AnotherPartOfWorkDone;
 
-        //public delegate void WorkerDelegate(EventValues e);
-        //public event WorkerDelegate? ClearingMoverTrace;
 
         public class EventValues : EventArgs
         {
@@ -91,7 +96,9 @@ namespace ProductLib
             dt = sw.ElapsedMilliseconds - lastTime;
 
             //RectangleF traceOfPreviosWorkingPlace;
-            
+
+            state = StateOfWork.Running;
+            StateChanged?.Invoke(state);
             while (working)
             {
                 lastTime = sw.ElapsedMilliseconds;
@@ -100,9 +107,10 @@ namespace ProductLib
                 {
                     //traceOfPreviosWorkingPlace = mover.Visual.AreaOfVisualisation;
                     //ClearingMoverTrace?.Invoke(new EventValues(traceOfPreviosWorkingPlace));
-
-                    mover.Step(dt / 1000f);
-
+                    if (!paused && working)
+                        mover.Step(dt / 1000f);
+                    else
+                        break;
                 }
 
                 AnotherPartOfWorkDone?.Invoke(this, EventArgs.Empty);
@@ -114,11 +122,20 @@ namespace ProductLib
                 while (paused)
                 {
                     lock (Worker.syncObject)
+                    {
+                        state = StateOfWork.Paused;
+                        StateChanged?.Invoke(state);
                         Monitor.Wait(syncObject);
+                    }
                     continue;
                 }
+
+                state = StateOfWork.Running;
+                StateChanged?.Invoke(state);
             }
 
+            state = StateOfWork.Finished;
+            StateChanged?.Invoke(state);
             return;
         }
 

@@ -53,11 +53,11 @@
             label2 = new Label();
             label3 = new Label();
             label4 = new Label();
-            textboxFirstThreadStatus = new TextBox();
-            textboxSecondThreadStatus = new TextBox();
             label5 = new Label();
             comboBoxFirstThreadPriority = new ComboBox();
             comboBoxSecondThreadPriority = new ComboBox();
+            textboxSecondThreadState = new TextBox();
+            textboxFirstThreadState = new TextBox();
             leftPanel.SuspendLayout();
             rightPanel.SuspendLayout();
             toolStrip1.SuspendLayout();
@@ -311,30 +311,16 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(713, 41);
+            label4.Location = new Point(686, 41);
             label4.Name = "label4";
             label4.Size = new Size(52, 20);
             label4.TabIndex = 13;
             label4.Text = "Статус";
             // 
-            // textboxFirstThreadStatus
-            // 
-            textboxFirstThreadStatus.Location = new Point(686, 71);
-            textboxFirstThreadStatus.Name = "textboxFirstThreadStatus";
-            textboxFirstThreadStatus.Size = new Size(101, 27);
-            textboxFirstThreadStatus.TabIndex = 14;
-            // 
-            // textboxSecondThreadStatus
-            // 
-            textboxSecondThreadStatus.Location = new Point(686, 105);
-            textboxSecondThreadStatus.Name = "textboxSecondThreadStatus";
-            textboxSecondThreadStatus.Size = new Size(101, 27);
-            textboxSecondThreadStatus.TabIndex = 15;
-            // 
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(797, 41);
+            label5.Location = new Point(793, 41);
             label5.Name = "label5";
             label5.Size = new Size(85, 20);
             label5.TabIndex = 16;
@@ -358,6 +344,24 @@
             comboBoxSecondThreadPriority.Size = new Size(99, 28);
             comboBoxSecondThreadPriority.TabIndex = 20;
             // 
+            // textboxSecondThreadState
+            // 
+            textboxSecondThreadState.BorderStyle = BorderStyle.None;
+            textboxSecondThreadState.Location = new Point(686, 108);
+            textboxSecondThreadState.Name = "textboxSecondThreadState";
+            textboxSecondThreadState.ReadOnly = true;
+            textboxSecondThreadState.Size = new Size(101, 20);
+            textboxSecondThreadState.TabIndex = 15;
+            // 
+            // textboxFirstThreadState
+            // 
+            textboxFirstThreadState.BorderStyle = BorderStyle.None;
+            textboxFirstThreadState.Location = new Point(686, 73);
+            textboxFirstThreadState.Name = "textboxFirstThreadState";
+            textboxFirstThreadState.ReadOnly = true;
+            textboxFirstThreadState.Size = new Size(101, 20);
+            textboxFirstThreadState.TabIndex = 14;
+            // 
             // ApplicationForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -366,8 +370,8 @@
             Controls.Add(comboBoxSecondThreadPriority);
             Controls.Add(comboBoxFirstThreadPriority);
             Controls.Add(label5);
-            Controls.Add(textboxSecondThreadStatus);
-            Controls.Add(textboxFirstThreadStatus);
+            Controls.Add(textboxSecondThreadState);
+            Controls.Add(textboxFirstThreadState);
             Controls.Add(label4);
             Controls.Add(label3);
             Controls.Add(label2);
@@ -419,10 +423,10 @@
         private Label label2;
         private Label label3;
         private Label label4;
-        private TextBox textboxFirstThreadStatus;
-        private TextBox textboxSecondThreadStatus;
         private Label label5;
         private ComboBox comboBoxFirstThreadPriority;
         private ComboBox comboBoxSecondThreadPriority;
+        private TextBox textboxSecondThreadState;
+        private TextBox textboxFirstThreadState;
     }
 }
