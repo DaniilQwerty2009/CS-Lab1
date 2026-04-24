@@ -1,6 +1,7 @@
 using Interfaces;
 using ProductLib;
 using System.ComponentModel;
+using System.Reflection;
 using System.Drawing.Text;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -13,21 +14,12 @@ namespace LabApp
     enum SpeedOfProductVisualisation { SomePixelPerSecond = 30};
     enum SizeOfPaintedImgEnum {  X = 50, Y = 50};
 
-    internal enum TypesOfProduct { [Description("Мебель")] Furniture = 1, [Description("Посуда")] Dish = 2 };
+    internal enum TypesOfProduct 
+    { 
+        [Description("Мебель")] Furniture = 1, 
+        [Description("Посуда")] Dish = 2,
+    };
 
-    public class TypeDisplay
-    {
-        TypesOfProduct type;
-        TypeDisplay(TypesOfProduct type)
-        {
-            this.type = type;
-        }
-
-        //public string Text
-        //{
-        //    get { return type.
-        //}
-    }
 
 
     // Основная форма приложения
@@ -158,16 +150,18 @@ namespace LabApp
 
         private void FirstThreadStateTextBoxUpdate(StateOfWork state)
         {
+
+
             if (textboxFirstThreadState.InvokeRequired)
             {
                 textboxFirstThreadState.Invoke(() =>
                 {
-                    textboxFirstThreadState.Text = state.ToString();
+                    textboxFirstThreadState.Text = state.GetDescription();
                 });
             }
             else
             {
-                textboxFirstThreadState.Text = state.ToString();
+                textboxFirstThreadState.Text = state.GetDescription(); 
             }
         }
 
@@ -177,12 +171,12 @@ namespace LabApp
             {
                 textboxSecondThreadState.Invoke(() =>
                 {
-                    textboxSecondThreadState.Text = state.ToString();
+                    textboxSecondThreadState.Text = state.GetDescription();
                 });
             }
             else
             {
-                textboxSecondThreadState.Text = state.ToString();
+                textboxSecondThreadState.Text = state.GetDescription();
             }
         }
 
@@ -275,7 +269,7 @@ namespace LabApp
                             }
                         }
 
-                        if(removingMover != null)
+                        if (removingMover != null)
                         {
                             worker1.RemoveMover(removingMover);
                         }
@@ -291,7 +285,7 @@ namespace LabApp
                                 break;
                             }
 
-                            if(removingMover != null)
+                            if (removingMover != null)
                                 worker2.RemoveMover(removingMover);
                         }
                     }
@@ -444,8 +438,8 @@ namespace LabApp
 
         private void BtnSecondThreadPause_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Before Continue");
-            Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            //Console.WriteLine("Before Continue");
+            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
 
             if (worker2.Working)
                 worker2.Pause();

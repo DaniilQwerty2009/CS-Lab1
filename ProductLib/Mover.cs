@@ -126,7 +126,7 @@ namespace ProductLib
 
     }
 
-    public class LineralMover : Mover // добавим свойства, получим разностароннее движение
+    public class LineralMover : Mover 
     {
 
         PointF beginPosition;
@@ -136,12 +136,6 @@ namespace ProductLib
         {
             beginPosition = visual.VisualPosition;
         }
-
-
-        //public PointF BeginPosition
-        //{
-        //    get { return beginPosition; }
-        //}
 
         public override void Step(float dt)
         {
@@ -181,11 +175,6 @@ namespace ProductLib
             RenewDirection();
             movingTimer = 0;
         }
-
-        //public float MovingTimer
-        //{
-        //    get { return movingTimer; }
-        //}
 
         public override void Step(float dt)
         {

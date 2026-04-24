@@ -23,7 +23,7 @@ namespace LabApp
         Point borderOfVisual;
 
         //List<TypesOfProduct> types;
-        TypesOfProduct selectedType;
+        TypeDisplay? selectedType;
 
         public ProductAddingForm(Point borderOfVisual)
         {
@@ -35,7 +35,8 @@ namespace LabApp
 
             foreach(TypesOfProduct s in Enum.GetValues(typeof(TypesOfProduct)))
             {
-                if()
+                TypeDisplay typeForUI = new(s);
+                comboBoxTypes.Items.Add(typeForUI);
             }
                 
         }
@@ -111,22 +112,24 @@ namespace LabApp
                 article = article * 10 + (ch - '0');
             }
 
-            if (comboBoxTypes.SelectedItem == null)
+            if (comboBoxTypes.SelectedItem == null || selectedType == null)
             {
                 MessageBox.Show("Такого типа нет в системе!");
                 return;
             }
 
+
+
             Point beginPos;
             Point dest;
             Point borderPoint = new Point(borderOfVisual.X, borderOfVisual.Y);
-            switch(selectedType)
+            switch(selectedType.Value)
             {
-                case TypesOfProduct.Посуда:
+                case TypesOfProduct.Dish:
 
                     
                     beginPos = Mover.GetRandomPoint(borderPoint);
-                    product = new Dishes(textBoxName.Text, article, selectedType.ToString(), beginPos);
+                    product = new Dishes(textBoxName.Text, article, selectedType.Text, beginPos);
                     
 
                     dest = Mover.GetRandomPoint(borderPoint);
@@ -143,7 +146,7 @@ namespace LabApp
                     this.Close();
                     break;
 
-                case TypesOfProduct.Мебель:
+                case TypesOfProduct.Furniture:
                     // Проверка на наличие комплектации, вывод сообщения
                     if (listBoxComponents.Items.Count < 1)
                     {
@@ -160,7 +163,7 @@ namespace LabApp
 
                         beginPos = Mover.GetRandomPoint(borderPoint);
 
-                        product = new Furniture(textBoxName.Text, article, selectedType.ToString(), compBuf, beginPos);
+                        product = new Furniture(textBoxName.Text, article, selectedType.Text, compBuf, beginPos);
 
                         if (product is IDrawable prodF)
                         {
@@ -206,9 +209,9 @@ namespace LabApp
         private void comboBoxTypes_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBoxTypes.SelectedIndex != -1 && comboBoxTypes.SelectedItem != null)
-                selectedType = (TypesOfProduct)comboBoxTypes.SelectedItem;
+                selectedType = (TypeDisplay)comboBoxTypes.SelectedItem;
 
-            if(selectedType == TypesOfProduct.Мебель)
+            if(selectedType != null && selectedType.Value == TypesOfProduct.Furniture)
             {
                 ComponentsEnable = true;
             }

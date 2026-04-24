@@ -4,11 +4,18 @@ using System.Text;
 using System.Diagnostics;
 using System.Drawing.Text;
 using System.Drawing;
+using System.ComponentModel;
 
 
 namespace ProductLib
 {
-    public enum StateOfWork {Unstarted, Running, Paused, Finished};
+    public enum StateOfWork 
+    {
+        [Description("Не запущен")] Unstarted,
+        [Description("Запущен")]    Running,
+        [Description("На паузе")]   Paused,
+        [Description("завершен")]   Finished
+    };
    
     public class Worker
     {
@@ -24,15 +31,11 @@ namespace ProductLib
 
         public event EventHandler? AnotherPartOfWorkDone;
 
-        public delegate void StateAcualisation(StateOfWork state);
-        public event StateAcualisation? StateChanged;
+        public delegate void StateActualisation(StateOfWork state);
+        public event StateActualisation? StateChanged;
         public Worker()
         {   } 
 
-        //public Worker(List<Mover> movers)
-        //{
-        //    this.movers = movers;
-        //}
 
         public bool Working
         {
@@ -61,19 +64,19 @@ namespace ProductLib
 
 
 
-        public class EventValues : EventArgs
-        {
-            RectangleF area;
-            public EventValues(RectangleF area)
-            {
-                this.area = area;
-            }
+        //public class EventValues : EventArgs
+        //{
+        //    RectangleF area;
+        //    public EventValues(RectangleF area)
+        //    {
+        //        this.area = area;
+        //    }
 
-            public RectangleF Area
-            {
-                get { return  area; }
-            }
-        }
+        //    public RectangleF Area
+        //    {
+        //        get { return  area; }
+        //    }
+        //}
 
         public void Run()
         {
