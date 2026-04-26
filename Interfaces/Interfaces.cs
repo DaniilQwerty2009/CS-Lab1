@@ -2,7 +2,7 @@
 
 namespace Interfaces
 {
-    // Для продуктов, состоящих из нескольких компонентов/имеющих комплектацию
+    // Для продуктов, состоящих из нескольких компонентов, т.е. имеющих комплектацию
     public interface IIncludeComponents
     {
         IEnumerable<string> Components {  get; }

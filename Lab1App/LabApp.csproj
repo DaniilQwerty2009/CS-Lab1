@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
     <ProjectReference Include="..\ProductLib\ProductLib.csproj" />
+    <ProjectReference Include="..\ProductTcpServer\ProductTcpServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

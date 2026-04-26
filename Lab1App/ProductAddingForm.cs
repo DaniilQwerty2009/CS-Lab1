@@ -35,7 +35,12 @@ namespace LabApp
 
             foreach(TypesOfProduct s in Enum.GetValues(typeof(TypesOfProduct)))
             {
-                TypeDisplay typeForUI = new(s);
+                TypeDisplay typeForUI = new TypeDisplay
+                {
+                    Value = s,
+                    Text = s.GetDescription(),
+                };
+
                 comboBoxTypes.Items.Add(typeForUI);
             }
                 

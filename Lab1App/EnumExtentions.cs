@@ -2,12 +2,20 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace LabApp
 {
+    /// <summary>
+    /// Расширения для перечислений
+    /// </summary>
     internal static class EnumExtentions
     {
+
+        /// <summary>
+        /// Возвращает сроку описания поля перечисления
+        /// </summary>
         internal static string GetDescription<T>(this T enumType)
             where T : Enum
         {
@@ -33,26 +41,27 @@ namespace LabApp
         }
     }
 
-
+    /// <summary>
+    /// Обертка для элемента перечисления TypesOfProduct. Содержит орписание (Description) элемента.
+    /// </summary>
     internal class TypeDisplay
     {
-        TypesOfProduct type;
-        internal TypeDisplay(TypesOfProduct type)
-        {
-            this.type = type;
-        }
+        public TypesOfProduct Value { get; set; }
 
-        public TypesOfProduct Value
-        {
-            get { return type; }
-        }
+        public string? Text { get; set; }
 
-        public string Text
-        {
-            get
-            {
-                return type.GetDescription();
-            }
-        }
+        public override string? ToString() => Text;
+    }
+
+
+    /// <summary>
+    /// Обертка для элемента перечисления ThreadPriority. Содержит орписание (Description) элемента.
+    /// </summary>
+    internal class PriorityItem
+    {
+        public ThreadPriority Value { get; set; }
+        public string? Text { get; set; }
+
+        public override string? ToString() => Text;
     }
 }

@@ -26,27 +26,22 @@ namespace LabApp
     public partial class ApplicationForm : Form
     {
         // Основная коллекция для хранения объектов
-        List<Product> products = new();
+        readonly List<Product> products = new();
 
         // Текущий выбор из списка объектов
         Product? selectedInListProduct;
 
-        //List<Mover> movers = new();
-
         /// <summary>
-        /// For furniture
+        /// Объект, отвечающий за перемещение объектов типа мебель (для LineralMover)
         /// </summary>
-        Worker worker1;
+        readonly Worker worker1;
         Thread? firstThread;
 
         /// <summary>
-        /// For dishes
+        /// Объект, отвечающий за перемещение объектов типа посуда (для RandomMover)
         /// </summary>
-        Worker worker2;
+        readonly Worker worker2;
         Thread? secondThread;
-
-        //List<Thread> threads = new();
-
 
         public ApplicationForm()
         {
@@ -57,33 +52,47 @@ namespace LabApp
 
             worker2 = new();
 
-
-            CreateExampleProducts(2, 2);
+            int f = Random.Shared.Next(5, 11);
+            int d = Random.Shared.Next(5, 11);
+            CreateExampleProducts((uint)f, (uint)d);
 
             worker1.AnotherPartOfWorkDone += RedrawPanelVisualisation;
             worker2.AnotherPartOfWorkDone += RedrawPanelVisualisation;
 
             worker1.StateChanged += FirstThreadStateTextBoxUpdate;
             worker2.StateChanged += SecondThreadStateTextBoxUpdate;
-            //worker1.ClearingMoverTrace += ClearPrveviosVisualisation;
-            //worker2.ClearingMoverTrace += ClearPrveviosVisualisation;
 
-            // Устанавливаем доступность кнопок
+
             UpdateButtonAccessibility();
+            btnStop.Enabled = false;
+            btnFirstThreadContinue.Enabled = false;
+            btnFirtsThreadPause.Enabled = false;
+
+            btnSecondThreadContinue.Enabled = false;
+            btnSecondThreadPause.Enabled = false;
 
             FirstThreadStateTextBoxUpdate(StateOfWork.Unstarted);
             SecondThreadStateTextBoxUpdate(StateOfWork.Unstarted);
+
+            FillPriorityComboBoxes();
+
         }
 
+        /// <summary>
+        /// Создание в системе объектов мебели и посуды
+        /// </summary>
         private void CreateExampleProducts(uint countOfFurniture, uint countOfDishes)
         {
             Product createdObject;
             List<string> comp = new();
             Point beginPos = new();
             Mover mov;
-            Point borderOfVisual = new();
-            borderOfVisual.X = panelVisualisation.Width - ((int)SizeOfPaintedImgEnum.X);
-            borderOfVisual.Y = panelVisualisation.Height - ((int)SizeOfPaintedImgEnum.Y);
+            Point borderOfVisual = new()
+            {
+                X = panelVisualisation.Width - ((int)SizeOfPaintedImgEnum.X),
+                Y = panelVisualisation.Height - ((int)SizeOfPaintedImgEnum.Y),
+            };
+
             for (int i = 0; i < 4; ++i)
             {
                 string c = $"Компонент {i}";
@@ -122,7 +131,9 @@ namespace LabApp
             }
         }
 
-        // Кнопки Удалить, Редактировать, Просмотр не доступны для нажатия до выбора элемента
+        /// <summary>
+        /// Обновление доступности кнопок просмотра, редактирования, удаления
+        /// </summary>
         private void UpdateButtonAccessibility()
         {
             // Делаем кликабельными
@@ -145,13 +156,14 @@ namespace LabApp
                 toolStripBtnDelete.Enabled = false;
                 toolStripBtnView.Enabled = false;
             }
+
         }
 
-
+        /// <summary>
+        /// Изменение строки, отображающей состояния первого потока
+        /// </summary>
         private void FirstThreadStateTextBoxUpdate(StateOfWork state)
         {
-
-
             if (textboxFirstThreadState.InvokeRequired)
             {
                 textboxFirstThreadState.Invoke(() =>
@@ -161,10 +173,14 @@ namespace LabApp
             }
             else
             {
-                textboxFirstThreadState.Text = state.GetDescription(); 
+                textboxFirstThreadState.Text = state.GetDescription();
             }
         }
 
+
+        /// <summary>
+        /// Изменение строки, отображающей состояния второго потока
+        /// </summary>
         private void SecondThreadStateTextBoxUpdate(StateOfWork state)
         {
             if (textboxSecondThreadState.InvokeRequired)
@@ -180,7 +196,9 @@ namespace LabApp
             }
         }
 
-        // Обработчик выбора элемента из списка
+        /// <summary>
+        /// Обработчик выбора элемента списка продуктов. Включает изменение selectedInListProduct и вызов UpdateButtonAccessibility();
+        /// </summary>
         private void ListProduct_SelectedIndexChanged(object sender, EventArgs e)
         {
             UpdateButtonAccessibility();
@@ -196,13 +214,15 @@ namespace LabApp
             }
         }
 
-        // Обработчик нажатия кнопки Добавить
+        /// <summary>
+        /// Обработчик нажатия кнопки Добавить. Вызов панели добавления продукта, обработка результата вызова
+        /// </summary>
         private void BtnAdd_Click(object sender, EventArgs e)
         {
             // определение границ отрисовки объектов для передачи в форму создания
             int xBorder = panelVisualisation.Width - (int)SizeOfPaintedImgEnum.X;
             int yBorder = panelVisualisation.Height - (int)SizeOfPaintedImgEnum.Y;
-            Point borderForVisual = new Point(xBorder, yBorder);
+            Point borderForVisual = new(xBorder, yBorder);
 
             // Вызов формы добавления объекта
             ProductAddingForm addingForm = new(borderForVisual);
@@ -234,8 +254,9 @@ namespace LabApp
                 }
             }
         }
-
-        // Обработчик нажатия кнопкки Просмотр
+        /// <summary>
+        /// Обработчик нажатия кнопкки Просмотр
+        /// </summary>
         private void BtnView_Click(object sender, EventArgs e)
         {
             if (selectedInListProduct != null)
@@ -246,7 +267,9 @@ namespace LabApp
             }
         }
 
-        // Обработчик нажатия кнопки Удалить
+        /// <summary>
+        /// Обработчик нажатия кнопки Удалить. Вызов диалогового окна, обработка результата вызова
+        /// </summary>
         private void BtnDelete_Click(object sender, EventArgs e)
         {
             if (selectedInListProduct != null)
@@ -256,7 +279,7 @@ namespace LabApp
 
                 if (decition == DialogResult.Yes)
                 {
-                    Mover removingMover = null;
+                    Mover? removingMover = null;
 
                     if (selectedInListProduct is Furniture _)
                     {
@@ -284,10 +307,9 @@ namespace LabApp
                                 removingMover = m;
                                 break;
                             }
-
-                            if (removingMover != null)
-                                worker2.RemoveMover(removingMover);
                         }
+                        if (removingMover != null)
+                            worker2.RemoveMover(removingMover);
                     }
 
 
@@ -303,7 +325,9 @@ namespace LabApp
             }
         }
 
-        // Обработчик нажатия кнопки Редактировать
+        /// <summary>
+        /// Обработчик нажатия кнопки Редактировать. Вызов панели редактирования продукта, обработка результата вызова
+        /// </summary>
         private void BtnEdit_Click(object sender, EventArgs e)
         {
             if (selectedInListProduct != null)
@@ -326,7 +350,9 @@ namespace LabApp
             }
         }
 
-        // Обработчик нажатия кнопки Справка
+        /// <summary>
+        /// Обработчик нажатия кнопки Справка
+        /// </summary>
         private void BtnInfo_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Программа для работы с коллекцией мебели (добавление, редактирование, удаление, просмотр). " +
@@ -353,12 +379,9 @@ namespace LabApp
 
         }
 
-        //public void ClearPrveviosVisualisation(Worker.EventValues e)
-        //{
-        //    Region regionToRepaint = new(e.Area);
-        //    panelVisualisation.Invalidate(regionToRepaint);
-        //}
-
+        /// <summary>
+        /// Обработчик обновления координат виуальной составляющей продуктов. Включает Invalidate панели отображения визуала
+        /// </summary>
         public void RedrawPanelVisualisation(Object? sender, EventArgs e)
         {
             if (InvokeRequired)
@@ -368,92 +391,101 @@ namespace LabApp
         }
 
 
+        /// <summary>
+        /// Обработчик кнопни запуска потоков
+        /// </summary>
         private void BtnStart_Click(object sender, EventArgs e)
         {
             firstThread = new Thread(new ThreadStart(worker1.Run))
             {
                 Name = "Thread for furniture",
-                //IsBackground = true,
+                IsBackground = true,
             };
             secondThread = new Thread(new ThreadStart(worker2.Run))
             {
                 Name = "Thread for dishes",
-                //IsBackground = true,
+                IsBackground = true,
             };
 
+            {
+                if (comboBoxFirstThreadPriority.SelectedItem is PriorityItem item)
+                {
+                    firstThread.Priority = item.Value;
+                }
+            }
 
-            //if (firstThread.ThreadState == (ThreadState.Unstarted &~ThreadState.Background))
+
+            {
+                if (comboBoxSecondThreadPriority.SelectedItem is PriorityItem item)
+                {
+                    secondThread.Priority = item.Value;
+                }
+            }
+
             firstThread.Start();
-            //if (secondThread.ThreadState == (ThreadState.Unstarted & ~ThreadState.Background))
+
             secondThread.Start();
 
-            //Console.WriteLine("After Start");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
-
             btnStart.Enabled = false;
+            btnStop.Enabled = true;
+            btnFirstThreadContinue.Enabled = false;
+            btnFirtsThreadPause.Enabled = true;
+
+            btnSecondThreadContinue.Enabled = false;
+            btnSecondThreadPause.Enabled = true;
+
         }
 
-        private void BtnfirstThreadPause_Click(object sender, EventArgs e)
+        private void BtnFirstThreadPause_Click(object sender, EventArgs e)
         {
-            //Console.WriteLine("Before Pause");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-
             if (worker1.Working)
+            {
                 worker1.Pause();
-
-            //Console.WriteLine("After Pause");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
+                btnFirtsThreadPause.Enabled = false;
+                btnFirstThreadContinue.Enabled = true;
+            }
         }
 
         private void BtnFirstThreadContinue_Click(object sender, EventArgs e)
         {
-            //Console.WriteLine("Before Contuinue");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-
             if (worker1.Working)
+            {
                 worker1.Continue();
+                btnFirstThreadContinue.Enabled = false;
+                btnFirtsThreadPause.Enabled = true;
+            }
+                
 
             lock (Worker.syncObject)
                 Monitor.PulseAll(Worker.syncObject);
-
-            //Console.WriteLine("After Contuinue");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
         }
 
         private void BtnSecondThreadContinue_Click(object sender, EventArgs e)
         {
-            //Console.WriteLine("Before Continue");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
-
             if (worker2.Working)
+            {
                 worker2.Continue();
+                btnSecondThreadContinue.Enabled = false;
+                btnSecondThreadPause.Enabled = true;
+            }
+                
 
             lock (Worker.syncObject)
                 Monitor.PulseAll(Worker.syncObject);
-
-            //Console.WriteLine("After Continue");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
         }
 
         private void BtnSecondThreadPause_Click(object sender, EventArgs e)
         {
-            //Console.WriteLine("Before Continue");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
-
             if (worker2.Working)
+            { 
                 worker2.Pause();
-
-            //Console.WriteLine("After Continue");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+                btnSecondThreadContinue.Enabled = true;
+                btnSecondThreadPause.Enabled = false;
+            }
         }
 
         private void BtnStop_Click(object sender, EventArgs e)
         {
-            //Console.WriteLine("Before Stop");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
-
             lock (Worker.syncObject)
             {
                 worker1.Stop();
@@ -463,10 +495,78 @@ namespace LabApp
             }
 
             btnStart.Enabled = true;
+            btnFirstThreadContinue.Enabled = false;
+            btnFirtsThreadPause.Enabled = false;
 
-            //Console.WriteLine("After Stop");
-            //Console.WriteLine($"{firstThread.Name} : {firstThread.ThreadState}");
-            //Console.WriteLine($"{secondThread.Name} : {secondThread.ThreadState}");
+            btnSecondThreadContinue.Enabled = false;
+            btnSecondThreadPause.Enabled = false;
+        }
+
+        /// <summary>
+        /// Заполнение списка доступных приоритетов потоков на панели глваной формы
+        /// </summary>
+        private void FillPriorityComboBoxes()
+        {
+            comboBoxFirstThreadPriority.Items.Add(new PriorityItem
+            {
+                Text = "Низкий",
+                Value = ThreadPriority.Lowest,
+            });
+            comboBoxSecondThreadPriority.Items.Add(new PriorityItem
+            {
+                Text = "Низкий",
+                Value = ThreadPriority.Lowest,
+            });
+
+            comboBoxFirstThreadPriority.Items.Add(new PriorityItem
+            {
+                Text = "Средний",
+                Value = ThreadPriority.Normal,
+            });
+            comboBoxSecondThreadPriority.Items.Add(new PriorityItem
+            {
+                Text = "Средний",
+                Value = ThreadPriority.Normal,
+            });
+
+            comboBoxFirstThreadPriority.SelectedItem = comboBoxFirstThreadPriority.Items[1];
+            comboBoxSecondThreadPriority.SelectedItem = comboBoxSecondThreadPriority.Items[1];
+
+            comboBoxFirstThreadPriority.Items.Add(new PriorityItem
+            {
+                Text = "Высокий",
+                Value = ThreadPriority.Highest,
+            });
+            comboBoxSecondThreadPriority.Items.Add(new PriorityItem
+            {
+                Text = "Высокий",
+                Value = ThreadPriority.Highest,
+            });
+        }
+
+        private void ComboBoxFirstThreadPriority_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (firstThread != null)
+            {
+                if (firstThread.IsAlive && comboBoxFirstThreadPriority.SelectedItem != null)
+                {
+                    if (comboBoxFirstThreadPriority.SelectedItem is PriorityItem p)
+                        firstThread.Priority = p.Value;
+                }
+            }
+        }
+
+        private void ComboBoxSecondThreadPriority_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (secondThread != null)
+            {
+                if (secondThread.IsAlive && comboBoxSecondThreadPriority.SelectedItem != null)
+                {
+                    if (comboBoxSecondThreadPriority.SelectedItem is PriorityItem p)
+                        secondThread.Priority = p.Value;
+                }
+
+            }
         }
     }
 }

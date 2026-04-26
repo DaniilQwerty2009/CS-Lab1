@@ -8,6 +8,9 @@ using System.Text;
 
 namespace ProductLib
 {
+    /// <summary>
+    /// Класс, обновляющий координаты визуальной сотовляющей объекта IDrawable
+    /// </summary>
     abstract public class Mover
     {
         protected PointF destination;
@@ -74,6 +77,10 @@ namespace ProductLib
             get { return visual.AreaOfVisualisation; }
         }
 
+
+        /// <summary>
+        /// Основной метод обновления координат
+        /// </summary>
         public virtual void Step(float dt)
         {
 
@@ -108,6 +115,9 @@ namespace ProductLib
 
         }
 
+        /// <summary>
+        /// Рассчитьывает расстояние между точками в пикселях и возвращает результат вычисления
+        /// </summary>
         static public float DistanceBetweenPoints(PointF point1, PointF point2)
         {
             float dx = (point2.X - point1.X);
@@ -126,6 +136,9 @@ namespace ProductLib
 
     }
 
+    /// <summary>
+    /// Мувер,  специализирующийся на прямолинейном движении между двумя точками: начала пути и точки назначения
+    /// </summary>
     public class LineralMover : Mover 
     {
 
@@ -146,7 +159,9 @@ namespace ProductLib
             }
         }
 
-
+        /// <summary>
+        /// Поворачивает к предыдущей точке
+        /// </summary>
         private void TurnBack()
         {
             PointF temp = beginPosition;
@@ -162,6 +177,9 @@ namespace ProductLib
         }
     }
 
+    /// <summary>
+    /// Мувер,  специализирующийся на прямолинейном движении в случайном направлении. Направление менятеся раз в пять секунд или по достижении границы отрисовки
+    /// </summary>
     public class RandomMover : Mover
     {
         Point border;
@@ -185,7 +203,7 @@ namespace ProductLib
 
             movingTimer += dt;
 
-            if (movingTimer >= 5)    // 5 по условию задачи
+            if (movingTimer >= 5)    
             {
                 finish = true;
             }
@@ -200,6 +218,9 @@ namespace ProductLib
 
         }
 
+        /// <summary>
+        /// Изменяет направление
+        /// </summary>
         private void RenewDirection()
         {
             int targetingBorder = Random.Shared.Next(4); // Выбираем одну из четырех сторон

@@ -9,14 +9,20 @@ using System.ComponentModel;
 
 namespace ProductLib
 {
+    /// <summary>
+    /// Статусы работы Воркера
+    /// </summary>
     public enum StateOfWork 
     {
         [Description("Не запущен")] Unstarted,
         [Description("Запущен")]    Running,
         [Description("На паузе")]   Paused,
-        [Description("завершен")]   Finished
+        [Description("Завершен")]   Finished
     };
-   
+
+    /// <summary>
+    /// Класс, приводящий в действие объекты Mover, содержащиеся в списке внутри класса
+    /// </summary>
     public class Worker
     {
         List<Mover> movers = new();
@@ -62,22 +68,9 @@ namespace ProductLib
                 movers.Remove(mover);
         }
 
-
-
-        //public class EventValues : EventArgs
-        //{
-        //    RectangleF area;
-        //    public EventValues(RectangleF area)
-        //    {
-        //        this.area = area;
-        //    }
-
-        //    public RectangleF Area
-        //    {
-        //        get { return  area; }
-        //    }
-        //}
-
+        /// <summary>
+        /// Запускает работу муверов пока не отсановлен или не поставлен на паузу
+        /// </summary>
         public void Run()
         {
             if (!Working)
@@ -93,25 +86,23 @@ namespace ProductLib
 
             Stopwatch sw = new Stopwatch();
 
-            float dt;
-            float lastTime = 0;
+            double dt;
+            double current = 0;
+            double lastTime = 0;
             sw.Start();
-            dt = sw.ElapsedMilliseconds - lastTime;
-
-            //RectangleF traceOfPreviosWorkingPlace;
 
             state = StateOfWork.Running;
             StateChanged?.Invoke(state);
             while (working)
             {
-                lastTime = sw.ElapsedMilliseconds;
+                
+                dt = current - lastTime;
+                lastTime = current;
 
                 foreach (Mover mover in movers)
                 {
-                    //traceOfPreviosWorkingPlace = mover.Visual.AreaOfVisualisation;
-                    //ClearingMoverTrace?.Invoke(new EventValues(traceOfPreviosWorkingPlace));
                     if (!paused && working)
-                        mover.Step(dt / 1000f);
+                        mover.Step((float)dt);
                     else
                         break;
                 }
@@ -120,7 +111,6 @@ namespace ProductLib
 
                 Thread.Sleep(10);
 
-                dt = sw.ElapsedMilliseconds - lastTime;
 
                 while (paused)
                 {
@@ -135,6 +125,8 @@ namespace ProductLib
 
                 state = StateOfWork.Running;
                 StateChanged?.Invoke(state);
+
+                current = sw.Elapsed.TotalSeconds;
             }
 
             state = StateOfWork.Finished;
