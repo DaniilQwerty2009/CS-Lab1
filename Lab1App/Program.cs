@@ -17,6 +17,9 @@ namespace LabApp
         [STAThread]
         static void Main()
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.InputEncoding = System.Text.Encoding.UTF8;
+
             var client = new TcpClient("127.0.0.1", 5000);
 
             var stream = client.GetStream();
@@ -24,6 +27,7 @@ namespace LabApp
             ThreadStart startListening = () => Listening(stream);
 
             Thread listening = new Thread(startListening);
+            listening.Name = "listeningThread";
 
             listening.Start();
 
@@ -47,12 +51,11 @@ namespace LabApp
         {
 
             string receveMsg;
-            int bytesCounter = 0;
 
             while (true)
             {
                 int messageSize = 0;
-                char buf = ' ';
+                char buf = new();
                 while (buf != '|')
                 {
                     buf = (char)stream.ReadByte();
@@ -64,25 +67,13 @@ namespace LabApp
                 }
 
                 byte[] buffer = new byte[messageSize];
-                while(bytesCounter <= messageSize)
-                {
-                    bytesCounter = stream.Read(buffer, 0, messageSize);
-                }
+
+                stream.ReadExactly(buffer, 0 , messageSize);
+
 
                 receveMsg = Encoding.UTF8.GetString(buffer);
 
                 ServerResponseInterpretator(receveMsg);
-
-                //if (readBytes == 0)
-                //{
-                //    Console.WriteLine("Сервер завершил работу");
-                //    break;
-                //}
-
-                //receveMsg = Encoding.UTF8.GetString(data, 0 , readBytes);
-
-                //ServerResponseInterpretator(receveMsg);
-
 
             }
 

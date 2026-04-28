@@ -27,6 +27,9 @@ namespace ProductTcpServer
     {
         static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.InputEncoding = System.Text.Encoding.UTF8;
+
             TcpServer server = new(IPAddress.Any, 5000);
 
             server.Listen(); 
@@ -35,7 +38,7 @@ namespace ProductTcpServer
         internal class TcpServer
         {
             static int i = 1;
-            static string threadName = "myThread" + i.ToString();
+            static string threadName = "myThread";
 
             List<ConnectedClient> connectedClients = new List<ConnectedClient>();
 
@@ -67,7 +70,7 @@ namespace ProductTcpServer
 
                     Thread anotherThread = new Thread(new ThreadStart(() => InitClient(newClient)));
                     anotherThread.IsBackground = true;
-                    anotherThread.Name = threadName;
+                    anotherThread.Name = threadName + i;
                     ++i;
 
                     //threads.Add(anotherThread);
@@ -97,6 +100,8 @@ namespace ProductTcpServer
                             client,
                             stream
                         );
+                        clientsListMailing();
+
                         connectedClients.Add(newClient);
 
                         Console.WriteLine($"Пользователь идентифицирован: \n {newClient.Name} \n {newClient.Client} \n {newClient.Stream}");
@@ -105,8 +110,6 @@ namespace ProductTcpServer
                         Console.WriteLine("Пользователь подключён");
 
                         TalkWith(newClient);
-
-                        clientsListMailing();
 
                         break;
                     default:
@@ -131,7 +134,6 @@ namespace ProductTcpServer
                     try
                     {
                         int readBytes = client.Stream.Read(data, 0, data.Length);
-
 
                         if (readBytes == 0)
                         {
