@@ -3,14 +3,11 @@ using System.Net;
 using System.Diagnostics;
 using System.Text;
 using System.Xml;
-using System.Diagnostics.SymbolStore;
 
 namespace ProductTcpServer
 {
-    /// <summary>
-    /// Represents commands sent from the server to the client.
-    /// </summary>
-    public enum ServerResponse {
+    public enum ServerResponse
+    {
         /// <summary>
         /// Indicates that the server sends a list of connected client names.
         /// </summary>
@@ -18,10 +15,13 @@ namespace ProductTcpServer
     };
 
 
-    internal enum clientCommand {
+    internal enum ClientCommand
+    {
         CONNECT,
         DISCONNECT,
+        LOGIN,
     };
+
 
     internal class ProductTcpServer
     {
@@ -32,21 +32,19 @@ namespace ProductTcpServer
 
             TcpServer server = new(IPAddress.Any, 5000);
 
-            server.Listen(); 
+            server.Listen();
+
         }
 
         internal class TcpServer
         {
-            static int i = 1;
-            static string threadName = "myThread";
-
             List<ConnectedClient> connectedClients = new List<ConnectedClient>();
 
-            //List<Thread> threads = new List<Thread>();
+            List<ClientSession> sessions = new List<ClientSession>();
 
             TcpListener listener;
 
-            public static object syncObject = new object();
+            private readonly object _clientsLock = new();
 
             public TcpServer(IPAddress address, int port)
             {
@@ -63,179 +61,157 @@ namespace ProductTcpServer
 
                 Console.WriteLine("Сервер запущен");
 
-                while (true)
+                try
                 {
-                    Console.WriteLine("Ожидание очередного подключения");
-                    TcpClient newClient = listener.AcceptTcpClient();
+                    while (true)
+                    {
+                        Console.WriteLine("***Ожидание очередного подключения***");
+                        TcpClient newClient = listener.AcceptTcpClient();
 
-                    Thread anotherThread = new Thread(new ThreadStart(() => InitClient(newClient)));
-                    anotherThread.IsBackground = true;
-                    anotherThread.Name = threadName + i;
-                    ++i;
+                        ClientSession newSession = new(newClient);
 
-                    //threads.Add(anotherThread);
+                        sessions.Add(newSession);
 
-                    anotherThread.Start();
+                        ThreadStart threadStart = () => TalkWith(newSession);
+
+                        Console.WriteLine("***Очередное подключения перенаправлено в отдельный поток***");
+
+                        Thread newThread = new(threadStart);
+
+                        newThread.Start();
+                    }
 
                 }
-            } // end of Listen
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to listen {ex.Message}");
+                }
+                finally
+                {
+                    foreach (ClientSession session in sessions)
+                    {
+                        session.Client.Close();
+                    }
+                }
 
-            void InitClient(TcpClient client)   // default to switch!!
+
+
+
+
+
+
+            } // End of Listen
+
+            private void TalkWith(ClientSession session)
             {
-                Console.WriteLine($"К серверу подключился новый пользователь. Идентификация...");
+                NetworkStream stream = session.Client.GetStream();
 
-                byte[] buffer = new byte[1024];
-
-                var stream = client.GetStream();
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-
-                string inputString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                string[] parts = inputString.Split('|');
-
-                switch (parts[0])
+                try
                 {
-                    case ("CONNECT"):
-                        ConnectedClient newClient = new(
-                            parts[1],
-                            client,
-                            stream
-                        );
-                        clientsListMailing();
-
-                        connectedClients.Add(newClient);
-
-                        Console.WriteLine($"Пользователь идентифицирован: \n {newClient.Name} \n {newClient.Client} \n {newClient.Stream}");
-
-
-                        Console.WriteLine("Пользователь подключён");
-
-                        TalkWith(newClient);
-
-                        break;
-                    default:
-                        Console.WriteLine($"Ошибка идентификации: команда {parts[0]} не существует");
-                        break;
-                }
-            }// end of initClient
-
-
-            void TalkWith(ConnectedClient client)
-            {
-                string helloMsg = $"Привет, {client.Name}! Ты подключился к серверу!";
-
-                byte[] data = new byte[1024];
-
-                data = Encoding.UTF8.GetBytes(helloMsg);
-
-                client.Stream.Write(data);
-
-                while (true)
-                {
-                    try
+                    while (true)
                     {
-                        int readBytes = client.Stream.Read(data, 0, data.Length);
+                        byte[] data = new byte[1024];
 
-                        if (readBytes == 0)
+                        int bytesRead = stream.Read(data, 0, data.Length);
+
+                        //string recivedCommand = Encoding.UTF8.GetString(data);
+
+                        foreach (ClientSession s in sessions)
                         {
-                            Console.WriteLine("Пользователь отключен");
-
-                            clientsListMailing();
-
-                            break;
-                        }
-
-                        string receveMsg = Encoding.UTF8.GetString(data, 0, readBytes);
-
-                        if (receveMsg == "DISCONNECT")
-                        {
-                            string goodbyMsg = $"***Пользователь {client.Name} оключился от сервера***";
-
-                            byte[] goodbyMsgData = Encoding.UTF8.GetBytes(goodbyMsg);
-
-
-                            lock (syncObject)
-                            {
-                                foreach (ConnectedClient cl in connectedClients)
-                                {
-                                    cl.Stream.Write(goodbyMsgData);
-                                }
-                                connectedClients.Remove(client);
-
-                                clientsListMailing();
-
-                                break;
-                            }
-
-                        }
-
-                        string chatMessage = $"{client.Name}: {receveMsg}";
-
-                        byte[] chatMessageData = Encoding.UTF8.GetBytes(chatMessage);
-
-
-                        lock (syncObject)
-                        {
-                            foreach (ConnectedClient cl in connectedClients)
-                            {
-                                cl.Stream.Write(chatMessageData);
-                            }
-                        }
-                    }
-                    catch (Exception _)
-                    {
-                        {
-                            string goodbyMsg = $"***Пользователь {client.Name} оключился от сервера***";
-
-                            byte[] goodbyMsgData = Encoding.UTF8.GetBytes(goodbyMsg);
-
-
-                            lock (syncObject)
-                            {
-                                connectedClients.Remove(client);
-
-                                foreach (ConnectedClient cl in connectedClients)
-                                {
-                                    cl.Stream.Write(goodbyMsgData);
-                                }
-                                
-
-                                clientsListMailing();
-
-                                break;
-                            }
+                            s.Stream.Write(data, 0, bytesRead);
                         }
 
                     }
                 }
-            } // end of TalkWith
-
-            void clientsListMailing()
-            {
-                lock (syncObject)
+                catch (IOException ex)
                 {
-                    string clients = ServerResponse.CLIENTS_INFO.ToString() + '|';
-
-                    foreach (ConnectedClient cl in connectedClients)
-                    {
-                        clients += cl.Name;
-                        clients += '|';
-                    }
-
-                    int bytes = Encoding.UTF8.GetByteCount(clients);
-
-                    string clientsInfo = bytes.ToString() + '|';
-
-                    clientsInfo += clients;
-
-                    byte[] clientInfoData = Encoding.UTF8.GetBytes(clientsInfo);
-
-                    foreach (ConnectedClient cl in connectedClients)
-                    {
-                        cl.Stream.Write(clientInfoData);
-                    }
-
+                    Console.WriteLine($"Failed to talk with {session.Name}: {ex.Message}");
                 }
-            } // end of clientsListMailing
-        } // end of class TcpServer
-    }// end of class ProductTcpServer
-}// end of namespace ProductTcpServer
+                finally
+                {
+                    stream.Close();
+                    session.Client.Close();
+                }
+
+            }// End of TalkWith
+
+            //void InitClient(TcpClient client)
+            //{
+            //    Console.WriteLine($"***К серверу подключился новый пользователь.***");
+
+            //    byte[] buffer = new byte[1024];
+
+            //    var stream = client.GetStream();
+            //    int bytesRead = stream.Read(buffer, 0, buffer.Length);
+
+            //    string inputString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            //    string[] parts = inputString.Split('|');
+
+            //    switch (parts[0])
+            //    {
+            //        case ("CONNECT"):
+            //            ConnectedClient newClient = new(
+            //                parts[1],
+            //                client,
+            //                stream
+            //            );
+            //            connectedClients.Add(newClient);
+
+            //            Console.WriteLine($"Пользователь идентифицирован: \n {newClient.Name} \n {newClient.Client} \n {newClient.Stream}");
+
+
+            //            Console.WriteLine("Пользователь подключён");
+
+            //            TalkWith(newClient);
+
+
+            //            break;
+            //        default:
+            //            Console.WriteLine($"Ошибка идентификации: команда {parts[0]} не существует");
+            //            break;
+            //    }
+            //}// End of initClient
+
+
+            //void TalkWith(ConnectedClient client)
+            //{
+            //    string helloMsg = $"Привет, {client.Name}! Ты подключился к серверу!";
+
+            //    byte[] data = new byte[1024];
+
+            //    data = Encoding.UTF8.GetBytes(helloMsg);
+
+            //    client.Stream.Write(data);
+
+            //    while (true)
+            //    {
+            //        int readBytes = client.Stream.Read(data, 0, data.Length);
+
+            //        if (readBytes == 0)
+            //        {
+            //            Console.WriteLine("Пользователь отключен");
+            //            Console.ReadLine();
+            //            break;
+            //        }
+
+            //        string receveMsg = Encoding.UTF8.GetString(data, 0, readBytes);
+
+            //        string chatMessage = $"{client.Name}: {receveMsg}";
+
+            //        byte[] chatMessageData = Encoding.UTF8.GetBytes(chatMessage);
+
+            //        foreach (ConnectedClient cl in connectedClients)
+            //        {
+            //            cl.Stream.Write(chatMessageData);
+            //        }
+
+
+            //    }
+
+
+        } // end of TcpServer
+
+    } // end of class ProductTcpServer
+
+} // end of namespace ProductTcpServer
+
