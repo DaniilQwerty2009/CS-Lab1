@@ -64,15 +64,17 @@ namespace LabApp
                 {
                     Console.WriteLine("Session perfomed a gracefull shotdown");
                     break;
-            }
+                }
 
                 string receveMsg = Encoding.UTF8.GetString(data, 0, readBytes);
 
                 Console.WriteLine(receveMsg);
 
-        }
+            }
 
         }
+
+
         
     }
 

@@ -13,11 +13,13 @@ namespace ProductTcpServer
         /// Indicates that the server sends a list of connected client names.
         /// </summary>
         CLIENTS_INFO,
+        PRODUCTS_DATA,
     };
 
 
     internal enum ClientCommand
     {
+        SEND_PRODUCTS_DATA,
         DISCONNECT,
         LOGIN,
     };
@@ -89,6 +91,7 @@ namespace ProductTcpServer
             {
                 foreach (ClientSession session in _sessions)
                 {
+                    session.Client.Client.Shutdown(SocketShutdown.Both);
                     session.Client.Close();
                 }
                 _sessions.Clear();
@@ -117,38 +120,7 @@ namespace ProductTcpServer
                         {
                             if(HandleCommand(session, command, points))
                             {
-                                ////Проверка
-
-                                //byte[] bytes = new byte[Encoding.UTF8.GetByteCount(command.ToString())];
-
-                                //bytes = Encoding.UTF8.GetBytes(command.ToString());
-
-                                //string point = string.Empty;
-
-                                //if (points != null)
-                                //{
-                                //    foreach (string s in points)
-                                //    {
-                                //        point += s;
-                                //    }
-                                //}
-
-                                ////if(session.Name != null)
-                                ////    byte[] bytes1 = new byte[Encoding.UTF8.GetByteCount(session.Name)];
-                                //byte[] bytes1 = new byte[1024];
-
-                                //if (session.Name != null)
-                                //    bytes1 = Encoding.UTF8.GetBytes(session.Name);
-
-                                //lock (_clientsLock)
-                                //{
-                                //    foreach (ClientSession s in _sessions)
-                                //    {
-                                //        s.Stream.Write(bytes, 0, bytes.Length);
-                                //        s.Stream.WriteByte((byte)'\n');
-                                //        s.Stream.Write(bytes1, 0, bytes1.Length);
-                                //    }
-                                //}
+                                
                             } 
                         }
                     }
@@ -170,43 +142,50 @@ namespace ProductTcpServer
 
         }// End of TalkWith
 
-        private void SendSessionsList()
+        private void SendOutClientsInfo()
         {
             lock(_clientsLock)
             {
-                string sessions = string.Empty;
+                string message = string.Empty;
 
-                foreach (ClientSession s in _sessions)
+                if (_sessions.Count > 0)
                 {
-                    sessions += s.Name + '|';
-                }
+                    message = ServerResponse.CLIENTS_INFO.ToString() + '|';
 
-                if(sessions.Length > 0)
-                {
-                    byte[] sessionsData = Encoding.UTF8.GetBytes(sessions);
+                    foreach (ClientSession s in _sessions)
+                    {
+                        if(s.IsConnect && s.IsLogged)
+                            message += s.Name + '|';
+                    }
+
+                    byte[] sessionsData = Encoding.UTF8.GetBytes(message);
 
                     foreach (ClientSession session in _sessions)
                     {
-                        if(session.Name != null)
+                        if (session.IsLogged && session.IsConnect)
                             session.Stream.Write(sessionsData, 0, sessionsData.Length);
                     }
-
                 }
             }
-        } // end of SendSessionsList
+        } // end of SendOutClientsInfo
 
-        static private bool HandleCommand(ClientSession session, ClientCommand command, string[]? points)
+        private bool HandleCommand(ClientSession session, ClientCommand command, string[]? points)
         {
             switch(command)
             {
                 case (ClientCommand.LOGIN):
                     if (points == null)
                         return false;
+
                     session.Login(points[0]);
+
+                    SendOutClientsInfo();
                     break;
 
                 case (ClientCommand.DISCONNECT):
                     session.Disconnect();
+
+                    SendOutClientsInfo();
                     break;
 
                 default:
@@ -218,7 +197,7 @@ namespace ProductTcpServer
             return true;
         }
 
-        static private bool TryParseMessage(string message, out ClientCommand command, out string[]? points)
+        private bool TryParseMessage(string message, out ClientCommand command, out string[]? points)
         {
             command = default;
             points = null;
@@ -243,7 +222,7 @@ namespace ProductTcpServer
             return true;
         }
 
-        static private bool TryReadFrame(NetworkStream stream, out string message, out int readBytes)
+        private bool TryReadFrame(NetworkStream stream, out string message, out int readBytes)
         {
             message = string.Empty;
             readBytes = 0;
