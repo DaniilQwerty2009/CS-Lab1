@@ -17,9 +17,9 @@ namespace LabApp
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
 
-            var client = new TcpClient("127.0.0.1", 5000);
-
-            var stream = client.GetStream();
+            TcpClient client = new TcpClient("127.0.0.1", 5000);
+            
+            NetworkStream stream = client.GetStream();
 
             ThreadStart startListening = () => Listener(stream);
 
@@ -32,17 +32,16 @@ namespace LabApp
             {
                 string? messsage = Console.ReadLine();
 
-                if (messsage == "0")
+                    if(messsage != null)
                 {
-                    Console.WriteLine("Сеанс завершен");
-                    break;
+                    messsage += '\n';
+
+                    byte[] data = Encoding.UTF8.GetBytes(messsage);
+
+                    stream.Write(data, 0, data.Length);
+
+                    Console.WriteLine("***Сообщение отправлено***");
                 }
-
-                byte[] data = Encoding.UTF8.GetBytes(messsage);
-
-                stream.Write(data, 0, data.Length);
-
-                Console.WriteLine("Сообщение отправлено");
             }
 
 
@@ -56,25 +55,25 @@ namespace LabApp
         {
             while (true)
             {
-
+               
                 byte[] data = new byte[1024];
 
                 int readBytes = stream.Read(data, 0, data.Length);
 
                 if (readBytes == 0)
                 {
-                    Console.WriteLine("Сервер завершил работу");
+                    Console.WriteLine("Session perfomed a gracefull shotdown");
                     break;
-                }
+            }
 
                 string receveMsg = Encoding.UTF8.GetString(data, 0, readBytes);
 
                 Console.WriteLine(receveMsg);
 
-            }
-
         }
 
+        }
+        
     }
 
 }

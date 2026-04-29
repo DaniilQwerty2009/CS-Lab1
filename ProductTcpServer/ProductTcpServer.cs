@@ -1,8 +1,9 @@
-﻿using System.Net.Sockets;
+﻿using System.Diagnostics;
 using System.Net;
-using System.Diagnostics;
+using System.Net.Sockets;
 using System.Text;
 using System.Xml;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProductTcpServer
 {
@@ -17,7 +18,6 @@ namespace ProductTcpServer
 
     internal enum ClientCommand
     {
-        CONNECT,
         DISCONNECT,
         LOGIN,
     };
@@ -32,186 +32,258 @@ namespace ProductTcpServer
 
             TcpServer server = new(IPAddress.Any, 5000);
 
-            server.Listen();
+            server.Launch();
 
         }
+    }
 
-        internal class TcpServer
+    internal class TcpServer
+    {
+        List<ClientSession> _sessions = new List<ClientSession>();
+
+        TcpListener _portListener;
+
+        private readonly object _clientsLock = new();
+
+        public TcpServer(IPAddress address, int port)
         {
-            List<ConnectedClient> connectedClients = new List<ConnectedClient>();
+            _portListener = new TcpListener(IPAddress.Any, port);
 
-            List<ClientSession> sessions = new List<ClientSession>();
+            Console.WriteLine("***Создан локальный сервер***");
+            Console.Write(address);
+            Console.WriteLine($":{port}");
+        }
 
-            TcpListener listener;
+        public void Launch()
+        {
+            _portListener.Start();
 
-            private readonly object _clientsLock = new();
+            Console.WriteLine("***Сервер запущен***");
 
-            public TcpServer(IPAddress address, int port)
+            try
             {
-                listener = new TcpListener(IPAddress.Any, port);
+                while (true)
+                {
+                    Console.WriteLine("***Ожидание очередного подключения***");
+                    TcpClient newClient = _portListener.AcceptTcpClient();
 
-                Console.WriteLine("Создан локальный сервер");
-                Console.Write(address);
-                Console.WriteLine($":{port}");
+                    ClientSession newSession = new(newClient);
+
+                    _sessions.Add(newSession);
+
+                    ThreadStart threadStart = () => Listen(newSession);
+
+                    Console.WriteLine("***Очередное подключения перенаправлено в отдельный поток***");
+
+                    Thread newThread = new(threadStart);
+
+                    newThread.Start();
+                }
+
             }
-
-            public void Listen()
+            catch (Exception ex)
             {
-                listener.Start();
-
-                Console.WriteLine("Сервер запущен");
-
-                try
-                {
-                    while (true)
-                    {
-                        Console.WriteLine("***Ожидание очередного подключения***");
-                        TcpClient newClient = listener.AcceptTcpClient();
-
-                        ClientSession newSession = new(newClient);
-
-                        sessions.Add(newSession);
-
-                        ThreadStart threadStart = () => TalkWith(newSession);
-
-                        Console.WriteLine("***Очередное подключения перенаправлено в отдельный поток***");
-
-                        Thread newThread = new(threadStart);
-
-                        newThread.Start();
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to listen {ex.Message}");
-                }
-                finally
-                {
-                    foreach (ClientSession session in sessions)
-                    {
-                        session.Client.Close();
-                    }
-                }
-
-
-
-
-
-
-
-            } // End of Listen
-
-            private void TalkWith(ClientSession session)
+                Console.WriteLine($"Failed to listen: {ex.Message}");
+            }
+            finally
             {
-                NetworkStream stream = session.Client.GetStream();
-
-                try
+                foreach (ClientSession session in _sessions)
                 {
-                    while (true)
-                    {
-                        byte[] data = new byte[1024];
-
-                        int bytesRead = stream.Read(data, 0, data.Length);
-
-                        //string recivedCommand = Encoding.UTF8.GetString(data);
-
-                        foreach (ClientSession s in sessions)
-                        {
-                            s.Stream.Write(data, 0, bytesRead);
-                        }
-
-                    }
-                }
-                catch (IOException ex)
-                {
-                    Console.WriteLine($"Failed to talk with {session.Name}: {ex.Message}");
-                }
-                finally
-                {
-                    stream.Close();
                     session.Client.Close();
                 }
+                _sessions.Clear();
 
-            }// End of TalkWith
+            }
 
-            //void InitClient(TcpClient client)
-            //{
-            //    Console.WriteLine($"***К серверу подключился новый пользователь.***");
+        } // End of Listen
 
-            //    byte[] buffer = new byte[1024];
+        private void Listen(ClientSession session)
+        {
+            NetworkStream stream = session.Client.GetStream();
 
-            //    var stream = client.GetStream();
-            //    int bytesRead = stream.Read(buffer, 0, buffer.Length);
+            try
+            {
+                while (session.IsConnect)
+                {
+                    if(TryReadFrame(session.Stream, out string message, out int readBytes))
+                    {
+                        if (readBytes == -1)
+                        {
+                            Console.WriteLine($"Peer socket perfomed a gracefull shotdown: {session.Name}");
+                            break;
+                        }
 
-            //    string inputString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            //    string[] parts = inputString.Split('|');
+                        if(TryParseMessage(message, out ClientCommand command, out string[]? points))
+                        {
+                            if(HandleCommand(session, command, points))
+                            {
+                                ////Проверка
 
-            //    switch (parts[0])
-            //    {
-            //        case ("CONNECT"):
-            //            ConnectedClient newClient = new(
-            //                parts[1],
-            //                client,
-            //                stream
-            //            );
-            //            connectedClients.Add(newClient);
+                                //byte[] bytes = new byte[Encoding.UTF8.GetByteCount(command.ToString())];
 
-            //            Console.WriteLine($"Пользователь идентифицирован: \n {newClient.Name} \n {newClient.Client} \n {newClient.Stream}");
+                                //bytes = Encoding.UTF8.GetBytes(command.ToString());
+
+                                //string point = string.Empty;
+
+                                //if (points != null)
+                                //{
+                                //    foreach (string s in points)
+                                //    {
+                                //        point += s;
+                                //    }
+                                //}
+
+                                ////if(session.Name != null)
+                                ////    byte[] bytes1 = new byte[Encoding.UTF8.GetByteCount(session.Name)];
+                                //byte[] bytes1 = new byte[1024];
+
+                                //if (session.Name != null)
+                                //    bytes1 = Encoding.UTF8.GetBytes(session.Name);
+
+                                //lock (_clientsLock)
+                                //{
+                                //    foreach (ClientSession s in _sessions)
+                                //    {
+                                //        s.Stream.Write(bytes, 0, bytes.Length);
+                                //        s.Stream.WriteByte((byte)'\n');
+                                //        s.Stream.Write(bytes1, 0, bytes1.Length);
+                                //    }
+                                //}
+                            } 
+                        }
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"Failed to read {session.Name}: {ex.Message}");
+            }
+            finally
+            {
+                session.Client.Client.Shutdown(SocketShutdown.Both);
+                session.Client.Close();
+                lock(_clientsLock)
+                {
+                    _sessions.Remove(session);
+                }
+            }
+
+        }// End of TalkWith
+
+        private void SendSessionsList()
+        {
+            lock(_clientsLock)
+            {
+                string sessions = string.Empty;
+
+                foreach (ClientSession s in _sessions)
+                {
+                    sessions += s.Name + '|';
+                }
+
+                if(sessions.Length > 0)
+                {
+                    byte[] sessionsData = Encoding.UTF8.GetBytes(sessions);
+
+                    foreach (ClientSession session in _sessions)
+                    {
+                        if(session.Name != null)
+                            session.Stream.Write(sessionsData, 0, sessionsData.Length);
+                    }
+
+                }
+            }
+        } // end of SendSessionsList
+
+        static private bool HandleCommand(ClientSession session, ClientCommand command, string[]? points)
+        {
+            switch(command)
+            {
+                case (ClientCommand.LOGIN):
+                    if (points == null)
+                        return false;
+                    session.Login(points[0]);
+                    break;
+
+                case (ClientCommand.DISCONNECT):
+                    session.Disconnect();
+                    break;
+
+                default:
+                        
+                    break;
+            }
 
 
-            //            Console.WriteLine("Пользователь подключён");
+            return true;
+        }
 
-            //            TalkWith(newClient);
+        static private bool TryParseMessage(string message, out ClientCommand command, out string[]? points)
+        {
+            command = default;
+            points = null;
 
-
-            //            break;
-            //        default:
-            //            Console.WriteLine($"Ошибка идентификации: команда {parts[0]} не существует");
-            //            break;
-            //    }
-            //}// End of initClient
-
-
-            //void TalkWith(ConnectedClient client)
-            //{
-            //    string helloMsg = $"Привет, {client.Name}! Ты подключился к серверу!";
-
-            //    byte[] data = new byte[1024];
-
-            //    data = Encoding.UTF8.GetBytes(helloMsg);
-
-            //    client.Stream.Write(data);
-
-            //    while (true)
-            //    {
-            //        int readBytes = client.Stream.Read(data, 0, data.Length);
-
-            //        if (readBytes == 0)
-            //        {
-            //            Console.WriteLine("Пользователь отключен");
-            //            Console.ReadLine();
-            //            break;
-            //        }
-
-            //        string receveMsg = Encoding.UTF8.GetString(data, 0, readBytes);
-
-            //        string chatMessage = $"{client.Name}: {receveMsg}";
-
-            //        byte[] chatMessageData = Encoding.UTF8.GetBytes(chatMessage);
-
-            //        foreach (ConnectedClient cl in connectedClients)
-            //        {
-            //            cl.Stream.Write(chatMessageData);
-            //        }
+            if (message.Length == 0)
+                throw new Exception("TryParseMessage was passed empty message");
 
 
-            //    }
+            string[] parts = message.Split('|', 2);
+
+            if( ! Enum.TryParse(parts[0], out command))
+            {
+                return false;
+            }
+
+            if (parts.Length > 1)
+            {
+                int pointsCount = parts.Length - 1;
+
+                points = parts[1].Split('|');                    
+            }
+            return true;
+        }
+
+        static private bool TryReadFrame(NetworkStream stream, out string message, out int readBytes)
+        {
+            message = string.Empty;
+            readBytes = 0;
+
+            int c;
+            List<byte> bytes = new();
+
+            while(true)
+            {
+                c = stream.ReadByte();
+
+                if (c == -1)
+                {
+                    readBytes = -1;
+                    break;
+                }
+                else if ((char)c == '\n')
+                {
+                    break;
+                }
+                else
+                {
+                    bytes.Add((byte)c);
+                    readBytes++;
+                }
+            }
+
+            if (readBytes == 0)
+                return false;
+
+            message = Encoding.UTF8.GetString(bytes.ToArray());
+
+            return true;
+        }
 
 
-        } // end of TcpServer
 
-    } // end of class ProductTcpServer
+    } // end of class TcpServer
 
-} // end of namespace ProductTcpServer
+}  // end of namespace ProductTcpServer
+
+
 
