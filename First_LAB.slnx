@@ -3,4 +3,5 @@
   <Project Path="Lab1App/LabApp.csproj" Id="9a80b94c-35c6-4bac-8d48-6a31cf00100e" />
   <Project Path="ProductLib/ProductLib.csproj" />
   <Project Path="ProductTcpServer/ProductTcpServer.csproj" Id="88c96b9b-c5f4-4535-a84b-ee5250fad231" />
+  <Project Path="ProductTcpShared/ProductTcpShared.csproj" Id="af42c8e8-90d1-4c21-8f87-99cb9447e1d7" />
 </Solution>

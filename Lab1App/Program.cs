@@ -1,5 +1,6 @@
-using System.Net.Sockets;
+using ProductTcpShared;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 
@@ -17,28 +18,31 @@ namespace LabApp
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
 
-            TcpClient client = new TcpClient("127.0.0.1", 5000);
-            
-            NetworkStream stream = client.GetStream();
+            NetworkConnection networkConnection = NetworkConnection.Create("127.0.0.1", 5000);
 
-            ThreadStart startListening = () => Listener(stream);
+          
+            //TcpClient client = new TcpClient("127.0.0.1", 5000);
 
-            Thread listening = new Thread(startListening);
-            listening.Name = "listeningThread";
+            //NetworkStream stream = client.GetStream();
 
-            listening.Start();
+            //ThreadStart startListening = () => Listener(stream);
+
+            //Thread listening = new Thread(startListening);
+            //listening.Name = "listeningThread";
+
+            //listening.Start();
 
             while (true)
             {
                 string? messsage = Console.ReadLine();
 
-                    if(messsage != null)
+                if (messsage != null)
                 {
                     messsage += '\n';
 
                     byte[] data = Encoding.UTF8.GetBytes(messsage);
 
-                    stream.Write(data, 0, data.Length);
+                    networkConnection.Stream.Write(data, 0, data.Length);
 
                     Console.WriteLine("***Сообщение отправлено***");
                 }
@@ -63,6 +67,7 @@ namespace LabApp
                 if (readBytes == 0)
                 {
                     Console.WriteLine("Session perfomed a gracefull shotdown");
+                    // закрыть client
                     break;
                 }
 

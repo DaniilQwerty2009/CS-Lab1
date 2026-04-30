@@ -152,11 +152,16 @@ namespace ProductTcpServer
                 {
                     message = ServerResponse.CLIENTS_INFO.ToString() + '|';
 
-                    foreach (ClientSession s in _sessions)
+                    for (int i = 0; i < _sessions.Count; i++)
                     {
-                        if(s.IsConnect && s.IsLogged)
-                            message += s.Name + '|';
+                         if(_sessions[i].IsConnect && _sessions[i].IsLogged)
+                            message += _sessions[i].Name;
+
+                        if (i < _sessions.Count - 1)
+                            message += '|';
                     }
+                   
+                    message += '\n';
 
                     byte[] sessionsData = Encoding.UTF8.GetBytes(message);
 
