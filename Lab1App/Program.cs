@@ -2,12 +2,13 @@ using ProductTcpShared;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using static System.Collections.Specialized.BitVector32;
 
 
 
 namespace LabApp
 {
-    internal static class Program
+    internal  class Program
     {
         /// <summary>
         ///  The main entry point for the application.
@@ -18,9 +19,12 @@ namespace LabApp
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
 
-            NetworkConnection networkConnection = NetworkConnection.Create("127.0.0.1", 5000);
+            TcpClient client = new TcpClient("127.0.0.1", 5000);
 
-          
+            NetworkConnection networkConnection = NetworkConnection.Create(client);
+
+            networkConnection.NewMessageReceved += HandleMessage;
+
             //TcpClient client = new TcpClient("127.0.0.1", 5000);
 
             //NetworkStream stream = client.GetStream();
@@ -34,18 +38,10 @@ namespace LabApp
 
             while (true)
             {
-                string? messsage = Console.ReadLine();
+                networkConnection.SendMessage(MessageType.LOGIN, ["user"]);
 
-                if (messsage != null)
-                {
-                    messsage += '\n';
+                networkConnection.SendMessage(MessageType.DISCONNECT, [string.Empty]);
 
-                    byte[] data = Encoding.UTF8.GetBytes(messsage);
-
-                    networkConnection.Stream.Write(data, 0, data.Length);
-
-                    Console.WriteLine("***Сообщение отправлено***");
-                }
             }
 
 
@@ -54,33 +50,25 @@ namespace LabApp
             //Application.Run(new ApplicationForm());
         }
 
-
-        static void Listener(NetworkStream stream)
+        public static void HandleMessage(NetworkMessage message)
         {
-            while (true)
+            switch (message.Type)
             {
-               
-                byte[] data = new byte[1024];
-
-                int readBytes = stream.Read(data, 0, data.Length);
-
-                if (readBytes == 0)
-                {
-                    Console.WriteLine("Session perfomed a gracefull shotdown");
-                    // закрыть client
+                case (MessageType.CLIENTS_INFO):
+                    if (message.Payload != null)
+                    {
+                        foreach (string s in message.Payload)
+                            Console.WriteLine(s);
+                    }
+                    
                     break;
-                }
 
-                string receveMsg = Encoding.UTF8.GetString(data, 0, readBytes);
+                default:
 
-                Console.WriteLine(receveMsg);
-
+                    break;
             }
-
         }
 
-
-        
     }
 
 }

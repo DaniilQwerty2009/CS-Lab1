@@ -10,6 +10,9 @@ namespace ProductTcpShared
         {
             Client = client;
             Stream = client.GetStream();
+
+            Connection = NetworkConnection.Create(client);
+            
             IsConnect = true;
         }
 

@@ -2,29 +2,11 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Xml;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using ProductTcpShared;
+
 
 namespace ProductTcpServer
 {
-    public enum ServerResponse
-    {
-        /// <summary>
-        /// Indicates that the server sends a list of connected client names.
-        /// </summary>
-        CLIENTS_INFO,
-        PRODUCTS_DATA,
-    };
-
-
-    internal enum ClientCommand
-    {
-        SEND_PRODUCTS_DATA,
-        DISCONNECT,
-        LOGIN,
-    };
-
-
     internal class ProductTcpServer
     {
         static void Main(string[] args)
@@ -71,15 +53,12 @@ namespace ProductTcpServer
 
                     ClientSession newSession = new(newClient);
 
+                    newSession.Connection.NewMessageReceved += message =>
+                    {
+                        HandleCommand(newSession, message);
+                    };
+
                     _sessions.Add(newSession);
-
-                    ThreadStart threadStart = () => Listen(newSession);
-
-                    Console.WriteLine("***Очередное подключения перенаправлено в отдельный поток***");
-
-                    Thread newThread = new(threadStart);
-
-                    newThread.Start();
                 }
 
             }
@@ -89,108 +68,85 @@ namespace ProductTcpServer
             }
             finally
             {
-                foreach (ClientSession session in _sessions)
-                {
-                    session.Client.Client.Shutdown(SocketShutdown.Both);
-                    session.Client.Close();
-                }
-                _sessions.Clear();
-
-            }
-
-        } // End of Listen
-
-        private void Listen(ClientSession session)
-        {
-            NetworkStream stream = session.Client.GetStream();
-
-            try
-            {
-                while (session.IsConnect)
-                {
-                    if(TryReadFrame(session.Stream, out string message, out int readBytes))
-                    {
-                        if (readBytes == -1)
-                        {
-                            Console.WriteLine($"Peer socket perfomed a gracefull shotdown: {session.Name}");
-                            break;
-                        }
-
-                        if(TryParseMessage(message, out ClientCommand command, out string[]? points))
-                        {
-                            if(HandleCommand(session, command, points))
-                            {
-                                
-                            } 
-                        }
-                    }
-                }
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"Failed to read {session.Name}: {ex.Message}");
-            }
-            finally
-            {
-                session.Client.Client.Shutdown(SocketShutdown.Both);
-                session.Client.Close();
                 lock(_clientsLock)
                 {
-                    _sessions.Remove(session);
+                    foreach (ClientSession session in _sessions)
+                    {
+                        try { session.Client.Client.Shutdown(SocketShutdown.Both); }
+                        catch { }
+
+                        session.Client.Close();
+                    }
+                    _sessions.Clear();
+                    _portListener.Stop();
                 }
             }
 
-        }// End of TalkWith
+        } // End of Launch
+
 
         private void SendOutClientsInfo()
         {
-            lock(_clientsLock)
+            lock (_clientsLock)
             {
-                string message = string.Empty;
-
                 if (_sessions.Count > 0)
                 {
-                    message = ServerResponse.CLIENTS_INFO.ToString() + '|';
+                    string[] payload = new string[_sessions.Count];
+                    MessageType type = MessageType.CLIENTS_INFO;
+
 
                     for (int i = 0; i < _sessions.Count; i++)
                     {
-                         if(_sessions[i].IsConnect && _sessions[i].IsLogged)
-                            message += _sessions[i].Name;
-
-                        if (i < _sessions.Count - 1)
-                            message += '|';
+                        if (_sessions[i].IsConnect && _sessions[i].IsLogged)
+                        {
+                            payload[i] = _sessions[i].Name;
+                        }
                     }
-                   
-                    message += '\n';
-
-                    byte[] sessionsData = Encoding.UTF8.GetBytes(message);
-
+                
                     foreach (ClientSession session in _sessions)
                     {
                         if (session.IsLogged && session.IsConnect)
-                            session.Stream.Write(sessionsData, 0, sessionsData.Length);
+                            session.Connection.SendMessage(type, payload);
                     }
                 }
             }
+
+
+
+
         } // end of SendOutClientsInfo
 
-        private bool HandleCommand(ClientSession session, ClientCommand command, string[]? points)
+        private void HandleCommand(ClientSession session, NetworkMessage message)
         {
-            switch(command)
+            switch (message.Type)
             {
-                case (ClientCommand.LOGIN):
-                    if (points == null)
-                        return false;
+                case (MessageType.LOGIN):
+                    if (message.Payload == null)
+                        return;
 
-                    session.Login(points[0]);
+                    session.Login(message.Payload[0]);
 
                     SendOutClientsInfo();
+
                     break;
 
-                case (ClientCommand.DISCONNECT):
-                    session.Disconnect();
+                case (MessageType.DISCONNECT):
 
-                    SendOutClientsInfo();
+                    lock(_clientsLock)
+                    {
+
+                        _sessions.Remove(session);
+
+                        session.Disconnect();
+
+                        try { session.Stream.Socket.Shutdown(SocketShutdown.Both); }
+                        catch { }
+
+                        session.Client.Close();
+
+                        SendOutClientsInfo();
+                    }
+                    
                     break;
 
                 default:
@@ -198,70 +154,9 @@ namespace ProductTcpServer
                     break;
             }
 
+        } // end of HandkeCommand
 
-            return true;
-        }
-
-        private bool TryParseMessage(string message, out ClientCommand command, out string[]? points)
-        {
-            command = default;
-            points = null;
-
-            if (message.Length == 0)
-                throw new Exception("TryParseMessage was passed empty message");
-
-
-            string[] parts = message.Split('|', 2);
-
-            if( ! Enum.TryParse(parts[0], out command))
-            {
-                return false;
-            }
-
-            if (parts.Length > 1)
-            {
-                int pointsCount = parts.Length - 1;
-
-                points = parts[1].Split('|');                    
-            }
-            return true;
-        }
-
-        private bool TryReadFrame(NetworkStream stream, out string message, out int readBytes)
-        {
-            message = string.Empty;
-            readBytes = 0;
-
-            int c;
-            List<byte> bytes = new();
-
-            while(true)
-            {
-                c = stream.ReadByte();
-
-                if (c == -1)
-                {
-                    readBytes = -1;
-                    break;
-                }
-                else if ((char)c == '\n')
-                {
-                    break;
-                }
-                else
-                {
-                    bytes.Add((byte)c);
-                    readBytes++;
-                }
-            }
-
-            if (readBytes == 0)
-                return false;
-
-            message = Encoding.UTF8.GetString(bytes.ToArray());
-
-            return true;
-        }
+       
 
 
 

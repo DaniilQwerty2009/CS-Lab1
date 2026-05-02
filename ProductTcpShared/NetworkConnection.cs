@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProductTcpShared
 {
@@ -19,23 +20,50 @@ namespace ProductTcpShared
         LOGIN,
     };
 
-    internal class NetworkMessage
+    public class NetworkMessage
     {
-        internal MessageType Type {  get; set; }
-        internal string[]? Payload { get; set; }
+        public MessageType Type {  get; internal set; }
+        public string[]? Payload { get; internal set; }
+
+        internal NetworkMessage()
+        {   }
+        
+        internal NetworkMessage(NetworkMessage other)
+        {
+            Type = other.Type;
+            if(other.Payload != null)
+                Payload = other.Payload.ToArray();
+            else
+                Payload = null;
+        }
     }
 
     public class NetworkConnection
     {
-        public static NetworkConnection Create(IPAddress ip, int port)
-        {
-            string _ip = ip.ToString();
-            return Create(_ip, port);
-        }
-        public static NetworkConnection Create(string ip, int port)
-        {
-            TcpClient client = new TcpClient(ip, port);
+        TcpClient Client { get; set; }
 
+        List<byte> dataBuffer = new();
+
+        public NetworkMessage NetworkMessage { get; private set; }
+
+        bool IsOpen { get; set; }
+
+        public NetworkStream Stream
+        {
+            get { return Client.GetStream(); }
+        }
+
+        public event Action<NetworkMessage>? NewMessageReceved;
+        // event ClientWasClosed
+
+        private NetworkConnection(TcpClient client) 
+        {
+            Client = client;
+            NetworkMessage = new NetworkMessage();
+        }
+
+        public static NetworkConnection Create(TcpClient client)
+        {
             NetworkConnection justCreatedConnection = new NetworkConnection(client);
             justCreatedConnection.IsOpen = true;
 
@@ -49,25 +77,6 @@ namespace ProductTcpShared
             return justCreatedConnection;
         }
 
-        private NetworkConnection(TcpClient client) 
-        {
-            Client = client;
-            networkMessage = new NetworkMessage();
-        }
-
-        TcpClient Client { get; set; }
-
-        public NetworkStream Stream 
-        {
-            get { return Client.GetStream(); } 
-        }
-
-        List<byte> dataBuffer = new();
-
-        NetworkMessage networkMessage;
-
-        bool IsOpen {  get; set; }
-        // event ClientWasClosed
 
         private void ListenStream()
         {
@@ -75,14 +84,11 @@ namespace ProductTcpShared
             {
                 while(IsOpen)
                 {
-                    if (TryReadFrame(Client.GetStream()))
+                    if (TryReadFrame())
                     {
                         if(TryParseMessage())
                         {
-                            // Проверка
-                            Console.WriteLine(networkMessage.Type.ToString());
-                            foreach(string s in networkMessage.Payload)
-                                Console.WriteLine('*' + s);
+                            NewMessageReceved?.Invoke(new(NetworkMessage));  
                         }
                     }
                 }
@@ -94,12 +100,11 @@ namespace ProductTcpShared
             }
             finally
             {
-                Client.Close();
                 Console.WriteLine("The connection has closed properly");   
             }
         }
 
-        private bool TryReadFrame(NetworkStream stream)
+        private bool TryReadFrame()
         {
             int readBytes = 0;
 
@@ -107,7 +112,7 @@ namespace ProductTcpShared
             
             while (true)
             {
-                c = stream.ReadByte();
+                c = Stream.ReadByte();
 
                 if (c == -1)
                 {
@@ -139,11 +144,13 @@ namespace ProductTcpShared
 
             string message = Encoding.UTF8.GetString(dataBuffer.ToArray());
 
+            dataBuffer.Clear();
+
             string[] parts = message.Split('|', 2);
 
             if (Enum.TryParse(parts[0], out MessageType result))
             {
-                networkMessage.Type = result;
+                NetworkMessage.Type = result;
             }
             else
                 return false;
@@ -151,9 +158,48 @@ namespace ProductTcpShared
 
             if (parts.Length > 1)
             {
-                networkMessage.Payload = parts[1].Split('|');
+                NetworkMessage.Payload = parts[1].Split('|');
             }
             return true;
         }
+
+        private byte[] SerialiseMessage(MessageType type, string?[] payload)
+        {
+            string message = type.ToString() + '|';
+
+            if (payload != null)
+            {
+                for (int i = 0; i < payload.Length; i++)
+                {
+                    message += payload[i];
+
+                    if (i < payload.Length - 1)
+                        message += '|';
+                }
+            }
+            
+            message += '\n';
+
+            return Encoding.UTF8.GetBytes(message);
+        }
+
+        public void SendMessage(MessageType type, string?[] payload)
+        {
+            byte[] data = SerialiseMessage(type, payload);
+
+            Stream.Write(data, 0, data.Length);
+
+            if (type == MessageType.DISCONNECT)
+            {
+                if (IsOpen)
+                    IsOpen = false;
+
+                try { Stream.Socket.Shutdown(SocketShutdown.Both); }
+                catch { }
+
+                Client.Close();
+            }
+        }
+
     }
 }
