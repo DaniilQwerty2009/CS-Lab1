@@ -9,9 +9,6 @@ namespace ProductTcpShared
 {
     public enum MessageType
     {
-        /// <summary>
-        /// Indicates that the server sends a list of connected client names.
-        /// </summary>
         CLIENTS_INFO,
 
         RQUEST_PRODUCTS_DATA,
@@ -23,49 +20,38 @@ namespace ProductTcpShared
     public class NetworkMessage
     {
         public MessageType Type {  get; internal set; }
-        public string[]? Payload { get; internal set; }
+        public string[] Payload { get; internal set; }
 
         internal NetworkMessage()
-        {   }
-        
-        internal NetworkMessage(NetworkMessage other)
         {
-            Type = other.Type;
-            if(other.Payload != null)
-                Payload = other.Payload.ToArray();
-            else
-                Payload = null;
+            Payload = Array.Empty<string>();
         }
+        
     }
 
     public class NetworkConnection
     {
-        TcpClient Client { get; set; }
+        private readonly TcpClient _client;
+        private readonly NetworkStream _stream;
+        private readonly List<byte> _dataBuffer = new();
+        private bool _isOpen;
 
-        List<byte> dataBuffer = new();
+        public bool IsOpen { get { return _isOpen; } }
 
-        public NetworkMessage NetworkMessage { get; private set; }
-
-        bool IsOpen { get; set; }
-
-        public NetworkStream Stream
-        {
-            get { return Client.GetStream(); }
-        }
-
-        public event Action<NetworkMessage>? NewMessageReceved;
+        public event Action<NetworkMessage>? NewMessageReceived;
+        public event EventHandler? ConnectionInterrupted;
         // event ClientWasClosed
 
         private NetworkConnection(TcpClient client) 
         {
-            Client = client;
-            NetworkMessage = new NetworkMessage();
+            _client = client;
+            _stream = client.GetStream();
+            _isOpen = true;
         }
 
         public static NetworkConnection Create(TcpClient client)
         {
             NetworkConnection justCreatedConnection = new NetworkConnection(client);
-            justCreatedConnection.IsOpen = true;
 
             ThreadStart startListening = new ThreadStart(justCreatedConnection.ListenStream);
 
@@ -77,18 +63,54 @@ namespace ProductTcpShared
             return justCreatedConnection;
         }
 
+        public void RequestDisconnect()
+        {
+            if (!_isOpen)
+                return;
+
+            try
+            {
+                SendMessage(MessageType.DISCONNECT, Array.Empty<string>());
+            }
+            catch
+            {
+                // Connection could be already closed
+            }
+
+            Close();
+        }
+
+        public void Close()
+        {
+            if (!_isOpen)
+                return;
+
+            _isOpen = false;
+
+            try
+            {
+                _client.Client.Shutdown(SocketShutdown.Both);
+            }
+            catch
+            {
+                // Connection could be already closed
+            }
+
+            _client.Close();
+        }
 
         private void ListenStream()
         {
             try
             {
-                while(IsOpen)
+                while(_isOpen)
                 {
-                    if (TryReadFrame())
+                    if (TryReadFrame(out List<byte> frame))
                     {
-                        if(TryParseMessage())
+                        if(TryParseMessage(frame, out NetworkMessage message))
                         {
-                            NewMessageReceved?.Invoke(new(NetworkMessage));  
+                            if(message != null)
+                                NewMessageReceived?.Invoke(message);  
                         }
                     }
                 }
@@ -96,27 +118,29 @@ namespace ProductTcpShared
             }
             catch(IOException e) 
             {
-                Console.WriteLine($"ListenStream catch exeption: {e.Message}");
+                Console.WriteLine($"ListenStream catch exсeption: {e.Message}");
+                ConnectionInterrupted?.Invoke(this, EventArgs.Empty);
             }
             finally
             {
-                Console.WriteLine("The connection has closed properly");   
+                Close();
             }
         }
 
-        private bool TryReadFrame()
+        private bool TryReadFrame(out List<byte> frame)
         {
+            frame = new();
             int readBytes = 0;
 
             int c;
             
             while (true)
             {
-                c = Stream.ReadByte();
+                c = _stream.ReadByte();
 
                 if (c == -1)
                 {
-                    IsOpen = false;
+                    Close();
                     return false;
                 }
                 else if ((char)c == '\n')
@@ -125,7 +149,7 @@ namespace ProductTcpShared
                 }
                 else
                 {
-                    dataBuffer.Add((byte)c);
+                    frame.Add((byte)c);
                     readBytes++;
                 }
             }
@@ -136,21 +160,25 @@ namespace ProductTcpShared
             return true;
         }
 
-        private bool TryParseMessage()
+        private bool TryParseMessage(List<byte> frame, out NetworkMessage message)
         {
+            message = new();
 
-            if (dataBuffer.Count == 0)
-                throw new Exception("TryParseMessage was trying parce empty message");
+            if (frame.Count == 0)
+                return false;
 
-            string message = Encoding.UTF8.GetString(dataBuffer.ToArray());
+            message = new();
 
-            dataBuffer.Clear();
+            string msg = Encoding.UTF8.GetString(frame.ToArray());
 
-            string[] parts = message.Split('|', 2);
+            frame.Clear();
+            
+
+            string[] parts = msg.Split('|', 2);
 
             if (Enum.TryParse(parts[0], out MessageType result))
             {
-                NetworkMessage.Type = result;
+                message.Type = result;
             }
             else
                 return false;
@@ -158,17 +186,20 @@ namespace ProductTcpShared
 
             if (parts.Length > 1)
             {
-                NetworkMessage.Payload = parts[1].Split('|');
+                message.Payload = parts[1].Split('|');
             }
+
             return true;
         }
 
-        private byte[] SerialiseMessage(MessageType type, string?[] payload)
+        private byte[] SerialiseMessage(MessageType type, string[] payload)
         {
-            string message = type.ToString() + '|';
+            string message = type.ToString();
 
-            if (payload != null)
+            if (payload.Length > 0)
             {
+                message += '|';
+
                 for (int i = 0; i < payload.Length; i++)
                 {
                     message += payload[i];
@@ -177,29 +208,16 @@ namespace ProductTcpShared
                         message += '|';
                 }
             }
-            
             message += '\n';
 
             return Encoding.UTF8.GetBytes(message);
         }
 
-        public void SendMessage(MessageType type, string?[] payload)
+        public void SendMessage(MessageType type, string[] payload)
         {
             byte[] data = SerialiseMessage(type, payload);
 
-            Stream.Write(data, 0, data.Length);
-
-            if (type == MessageType.DISCONNECT)
-            {
-                if (IsOpen)
-                    IsOpen = false;
-
-                try { Stream.Socket.Shutdown(SocketShutdown.Both); }
-                catch { }
-
-                Client.Close();
-            }
+            _stream.Write(data, 0, data.Length);
         }
-
     }
 }

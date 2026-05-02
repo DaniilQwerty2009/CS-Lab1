@@ -18,14 +18,14 @@ namespace ProductLib
                 foreach (string comp in components)
                 {
                     if (!Validator.StringValidate(comp))
-                        throw new WrongFormatExeption();
+                        throw new WrongFormatExсeption();
 
                     this.components.Add(comp.ToLower());
                 }
             }
             else
             {
-                throw new EmptyComponentsExeptions();
+                throw new EmptyComponentsExceptions();
             }
 
             visual = new DrawingObject(Properties.Resources.Furniture, positionOfVisual);
@@ -103,7 +103,7 @@ namespace ProductLib
 
             if (!Validator.StringValidate(component))
             {
-                WrongFormatExeption ex = new();
+                WrongFormatExсeption ex = new();
                 ex.Value = component;
                 throw ex;
             }
@@ -115,7 +115,7 @@ namespace ProductLib
         public bool RemoveComponent(string component)
         {
             if(components.Count == 1)
-                throw new EmptyComponentsExeptions();
+                throw new EmptyComponentsExceptions();
 
             return components.Remove(component);
         }
@@ -125,7 +125,7 @@ namespace ProductLib
             if(index < 0 || index >= components.Count)
                 throw new IndexOutOfRangeException();
             if (components.Count == 1)
-                throw new EmptyComponentsExeptions();
+                throw new EmptyComponentsExceptions();
 
             components.RemoveAt(index);
 
@@ -139,7 +139,7 @@ namespace ProductLib
             {
                 if(!Validator.StringValidate(s))
                 {
-                    WrongFormatExeption ex = new();
+                    WrongFormatExсeption ex = new();
                     ex.Value = s;
                     throw ex;
                 }

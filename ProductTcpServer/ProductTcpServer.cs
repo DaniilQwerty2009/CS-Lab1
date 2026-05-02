@@ -53,9 +53,14 @@ namespace ProductTcpServer
 
                     ClientSession newSession = new(newClient);
 
-                    newSession.Connection.NewMessageReceved += message =>
+                    newSession.Connection.NewMessageReceived += message =>
                     {
                         HandleCommand(newSession, message);
+                    };
+
+                    newSession.Connection.ConnectionInterrupted += (sender, e) =>
+                    {
+                        ExcludeSession(newSession);
                     };
 
                     _sessions.Add(newSession);
@@ -72,10 +77,16 @@ namespace ProductTcpServer
                 {
                     foreach (ClientSession session in _sessions)
                     {
-                        try { session.Client.Client.Shutdown(SocketShutdown.Both); }
-                        catch { }
+                        try 
+                        { 
+                            session.Connection.Close();
+                        }
+                        catch 
+                        { 
+                            // Connection could be already closed
+                        }
 
-                        session.Client.Close();
+                        
                     }
                     _sessions.Clear();
                     _portListener.Stop();
@@ -97,7 +108,7 @@ namespace ProductTcpServer
 
                     for (int i = 0; i < _sessions.Count; i++)
                     {
-                        if (_sessions[i].IsConnect && _sessions[i].IsLogged)
+                        if (_sessions[i].Connection.IsOpen && _sessions[i].IsLogged)
                         {
                             payload[i] = _sessions[i].Name;
                         }
@@ -105,7 +116,7 @@ namespace ProductTcpServer
                 
                     foreach (ClientSession session in _sessions)
                     {
-                        if (session.IsLogged && session.IsConnect)
+                        if (session.IsLogged && session.Connection.IsOpen)
                             session.Connection.SendMessage(type, payload);
                     }
                 }
@@ -121,12 +132,20 @@ namespace ProductTcpServer
             switch (message.Type)
             {
                 case (MessageType.LOGIN):
-                    if (message.Payload == null)
+                    if (message.Payload == Array.Empty<string>())
                         return;
 
-                    session.Login(message.Payload[0]);
+                    try
+                    {
+                        session.Login(message.Payload[0]);
 
-                    SendOutClientsInfo();
+                        SendOutClientsInfo();
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
 
                     break;
 
@@ -134,15 +153,11 @@ namespace ProductTcpServer
 
                     lock(_clientsLock)
                     {
+                        Console.WriteLine("***Клиент инициировал завершение сессии***");
 
                         _sessions.Remove(session);
 
-                        session.Disconnect();
-
-                        try { session.Stream.Socket.Shutdown(SocketShutdown.Both); }
-                        catch { }
-
-                        session.Client.Close();
+                        session.End();
 
                         SendOutClientsInfo();
                     }
@@ -154,10 +169,17 @@ namespace ProductTcpServer
                     break;
             }
 
-        } // end of HandkeCommand
+        } // end of HandleCommand
 
-       
 
+        private void ExcludeSession(ClientSession session)
+        {
+            _sessions.Remove(session);
+
+            session.End();
+
+            SendOutClientsInfo();
+        }
 
 
     } // end of class TcpServer

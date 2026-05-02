@@ -17,20 +17,20 @@ namespace ProductLib
             //Проверка на формат строк и чисел (только буквенные знаки, пробелы и натуральные числа)
             if(!Validator.StringValidate(name))
             {
-                var ex = new WrongFormatExeption();
+                var ex = new WrongFormatExсeption();
                 ex.Value = name;
                 throw ex;
             }
             else if(!Validator.StringValidate(type))
             {
-                var ex = new WrongFormatExeption();
+                var ex = new WrongFormatExсeption();
                 ex.Value = type;
                 throw ex;
 
             }
             else if(!Validator.NumberValidate(article))
             {
-                var ex = new WrongFormatExeption();
+                var ex = new WrongFormatExсeption();
                 ex.Value = article.ToString();
                 throw ex;
             }
@@ -51,7 +51,7 @@ namespace ProductLib
             {
                 if (!Validator.StringValidate(value))
                 {
-                    var ex = new WrongFormatExeption();
+                    var ex = new WrongFormatExсeption();
                     ex.Value = value;
                     throw ex;
                 }
@@ -66,7 +66,7 @@ namespace ProductLib
             {
                 if (!Validator.NumberValidate(value))
                 {
-                    var ex = new WrongFormatExeption();
+                    var ex = new WrongFormatExсeption();
                     ex.Value = value.ToString();
                     throw ex;
                 }
@@ -81,7 +81,7 @@ namespace ProductLib
             {
                 if (!Validator.StringValidate(value))
                 {
-                    var ex = new WrongFormatExeption();
+                    var ex = new WrongFormatExсeption();
                     ex.Value = value;
                     throw ex;
 

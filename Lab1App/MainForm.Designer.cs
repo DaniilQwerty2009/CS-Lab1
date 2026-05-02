@@ -49,15 +49,18 @@
             btnSecondThreadContinue = new Button();
             btnSecondThreadPause = new Button();
             btnStop = new Button();
-            label1 = new Label();
+            labelSourcesControl = new Label();
             label2 = new Label();
             label3 = new Label();
-            label4 = new Label();
-            label5 = new Label();
+            labelStatus = new Label();
+            labelPriority = new Label();
             comboBoxFirstThreadPriority = new ComboBox();
             comboBoxSecondThreadPriority = new ComboBox();
             textboxSecondThreadState = new TextBox();
             textboxFirstThreadState = new TextBox();
+            labelLocalConnection = new Label();
+            labelUser = new Label();
+            listClients = new ListBox();
             leftPanel.SuspendLayout();
             rightPanel.SuspendLayout();
             toolStrip1.SuspendLayout();
@@ -162,7 +165,7 @@
             toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripBtnAdd, toolStripBtnView, toolStripBtnEdit, toolStripBtnDelete, toolStripBtnInfo });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(984, 27);
+            toolStrip1.Size = new Size(979, 27);
             toolStrip1.TabIndex = 2;
             toolStrip1.Text = "toolStrip1";
             // 
@@ -226,7 +229,7 @@
             panelVisualisation.Location = new Point(490, 117);
             panelVisualisation.Margin = new Padding(3, 2, 3, 2);
             panelVisualisation.Name = "panelVisualisation";
-            panelVisualisation.Size = new Size(483, 300);
+            panelVisualisation.Size = new Size(483, 339);
             panelVisualisation.TabIndex = 3;
             panelVisualisation.Paint += PanelVisualisation_Paint;
             // 
@@ -296,14 +299,14 @@
             btnStop.UseVisualStyleBackColor = true;
             btnStop.Click += BtnStop_Click;
             // 
-            // label1
+            // labelSourcesControl
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(490, 8);
-            label1.Name = "label1";
-            label1.Size = new Size(130, 15);
-            label1.TabIndex = 10;
-            label1.Text = "Управление потоками";
+            labelSourcesControl.AutoSize = true;
+            labelSourcesControl.Location = new Point(490, 8);
+            labelSourcesControl.Name = "labelSourcesControl";
+            labelSourcesControl.Size = new Size(130, 15);
+            labelSourcesControl.TabIndex = 10;
+            labelSourcesControl.Text = "Управление потоками";
             // 
             // label2
             // 
@@ -323,23 +326,23 @@
             label3.TabIndex = 12;
             label3.Text = "Поток номер 2";
             // 
-            // label4
+            // labelStatus
             // 
-            label4.AutoSize = true;
-            label4.Location = new Point(600, 31);
-            label4.Name = "label4";
-            label4.Size = new Size(43, 15);
-            label4.TabIndex = 13;
-            label4.Text = "Статус";
+            labelStatus.AutoSize = true;
+            labelStatus.Location = new Point(600, 31);
+            labelStatus.Name = "labelStatus";
+            labelStatus.Size = new Size(43, 15);
+            labelStatus.TabIndex = 13;
+            labelStatus.Text = "Статус";
             // 
-            // label5
+            // labelPriority
             // 
-            label5.AutoSize = true;
-            label5.Location = new Point(694, 31);
-            label5.Name = "label5";
-            label5.Size = new Size(67, 15);
-            label5.TabIndex = 16;
-            label5.Text = "Приоритет";
+            labelPriority.AutoSize = true;
+            labelPriority.Location = new Point(694, 31);
+            labelPriority.Name = "labelPriority";
+            labelPriority.Size = new Size(67, 15);
+            labelPriority.TabIndex = 16;
+            labelPriority.Text = "Приоритет";
             // 
             // comboBoxFirstThreadPriority
             // 
@@ -383,20 +386,48 @@
             textboxFirstThreadState.Size = new Size(88, 16);
             textboxFirstThreadState.TabIndex = 14;
             // 
+            // labelLocalConnection
+            // 
+            labelLocalConnection.AutoSize = true;
+            labelLocalConnection.Location = new Point(13, 482);
+            labelLocalConnection.Name = "labelLocalConnection";
+            labelLocalConnection.Size = new Size(135, 15);
+            labelLocalConnection.TabIndex = 21;
+            labelLocalConnection.Text = "Локальное соединение";
+            // 
+            // labelUser
+            // 
+            labelUser.AutoSize = true;
+            labelUser.Location = new Point(13, 503);
+            labelUser.Name = "labelUser";
+            labelUser.Size = new Size(0, 15);
+            labelUser.TabIndex = 22;
+            // 
+            // listClients
+            // 
+            listClients.FormattingEnabled = true;
+            listClients.Location = new Point(13, 531);
+            listClients.Name = "listClients";
+            listClients.Size = new Size(293, 139);
+            listClients.TabIndex = 23;
+            // 
             // ApplicationForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(984, 467);
+            ClientSize = new Size(979, 720);
+            Controls.Add(listClients);
+            Controls.Add(labelUser);
+            Controls.Add(labelLocalConnection);
             Controls.Add(comboBoxSecondThreadPriority);
             Controls.Add(comboBoxFirstThreadPriority);
-            Controls.Add(label5);
+            Controls.Add(labelPriority);
             Controls.Add(textboxSecondThreadState);
             Controls.Add(textboxFirstThreadState);
-            Controls.Add(label4);
+            Controls.Add(labelStatus);
             Controls.Add(label3);
             Controls.Add(label2);
-            Controls.Add(label1);
+            Controls.Add(labelSourcesControl);
             Controls.Add(btnStop);
             Controls.Add(btnSecondThreadPause);
             Controls.Add(btnSecondThreadContinue);
@@ -409,6 +440,7 @@
             Controls.Add(leftPanel);
             Margin = new Padding(3, 2, 3, 2);
             Name = "ApplicationForm";
+            Text = " ";
             leftPanel.ResumeLayout(false);
             rightPanel.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
@@ -440,14 +472,17 @@
         private Button btnSecondThreadContinue;
         private Button btnSecondThreadPause;
         private Button btnStop;
-        private Label label1;
+        private Label labelSourcesControl;
         private Label label2;
         private Label label3;
-        private Label label4;
-        private Label label5;
+        private Label labelStatus;
+        private Label labelPriority;
         private ComboBox comboBoxFirstThreadPriority;
         private ComboBox comboBoxSecondThreadPriority;
         private TextBox textboxSecondThreadState;
         private TextBox textboxFirstThreadState;
+        private Label labelLocalConnection;
+        private Label labelUser;
+        private ListBox listClients;
     }
 }

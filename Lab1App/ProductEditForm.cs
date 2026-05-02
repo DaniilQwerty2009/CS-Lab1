@@ -77,7 +77,7 @@ namespace LabApp
             {
                 if (listBoxComponents.Items.Count == 0)
                 {
-                    ProductLib.EmptyComponentsExeptions ex = new();
+                    ProductLib.EmptyComponentsExceptions ex = new();
                     MessageBox.Show(ex.Message);
                     return;
                 }

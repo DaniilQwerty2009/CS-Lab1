@@ -3,6 +3,8 @@ using ProductLib;
 using ProductTcpShared;
 using System.ComponentModel;
 using System.Drawing.Text;
+using System.Formats.Nrbf;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -44,6 +46,9 @@ namespace LabApp
         readonly Worker worker2;
         Thread? secondThread;
 
+        NetworkConnection networkConnection;
+
+
         public ApplicationForm()
         {
 
@@ -78,7 +83,18 @@ namespace LabApp
             FillPriorityComboBoxes();
 
 
+            TcpClient client = new TcpClient("127.0.0.1", 5000);
 
+            networkConnection = NetworkConnection.Create(client);
+
+            networkConnection.NewMessageReceived += HandleMessage;
+
+            LoginForm loginForm = new LoginForm();
+            loginForm.ShowDialog();
+
+            labelUser.Text = loginForm.Username;
+
+            networkConnection.SendMessage(MessageType.LOGIN, new string[] { labelUser.Text });
         }
 
         /// <summary>
@@ -214,6 +230,7 @@ namespace LabApp
             else if (listProduct.SelectedItem == null)
             {
                 selectedInListProduct = null;
+                
             }
         }
 
@@ -239,8 +256,6 @@ namespace LabApp
                 {
                     products.Add(addingForm.Product);
                     listProduct.Items.Add(addingForm.Product);
-
-                    //movers.Add(addingForm.Mover);
 
                     if (addingForm.Mover is LineralMover _)
                         worker1.AddMover(addingForm.Mover);
@@ -457,7 +472,7 @@ namespace LabApp
                 btnFirstThreadContinue.Enabled = false;
                 btnFirtsThreadPause.Enabled = true;
             }
-                
+
 
             lock (Worker.syncObject)
                 Monitor.PulseAll(Worker.syncObject);
@@ -471,7 +486,7 @@ namespace LabApp
                 btnSecondThreadContinue.Enabled = false;
                 btnSecondThreadPause.Enabled = true;
             }
-                
+
 
             lock (Worker.syncObject)
                 Monitor.PulseAll(Worker.syncObject);
@@ -480,7 +495,7 @@ namespace LabApp
         private void BtnSecondThreadPause_Click(object sender, EventArgs e)
         {
             if (worker2.Working)
-            { 
+            {
                 worker2.Pause();
                 btnSecondThreadContinue.Enabled = true;
                 btnSecondThreadPause.Enabled = false;
@@ -569,6 +584,29 @@ namespace LabApp
                         secondThread.Priority = p.Value;
                 }
 
+            }
+
+        }
+
+
+        public void HandleMessage(NetworkMessage message)
+        {
+            switch (message.Type)
+            {
+                case (MessageType.CLIENTS_INFO):
+                    listClients.Invoke(() => listClients.Items.Clear());
+
+                    
+
+                    foreach(string client in message.Payload)
+                        listClients.Invoke(() => listClients.Items.Add(client));
+
+
+                    break;
+
+                default:
+
+                    break;
             }
         }
     }
