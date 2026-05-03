@@ -2,15 +2,8 @@ using Interfaces;
 using ProductLib;
 using ProductTcpShared;
 using System.ComponentModel;
-using System.Drawing.Text;
-using System.Formats.Nrbf;
 using System.Net.Sockets;
-using System.Numerics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security;
-using System.Timers;
-using System.Windows.Forms.VisualStyles;
+
 
 namespace LabApp
 {
@@ -22,6 +15,8 @@ namespace LabApp
         [Description("Мебель")] Furniture = 1, 
         [Description("Посуда")] Dish = 2,
     };
+
+
 
 
 
@@ -46,7 +41,11 @@ namespace LabApp
         readonly Worker worker2;
         Thread? secondThread;
 
-        NetworkConnection networkConnection;
+        User _user;
+
+        private readonly object _lockNetworkUsers = new object();
+
+        List<NetworkUser> networkUsers = new();
 
 
         public ApplicationForm()
@@ -82,19 +81,18 @@ namespace LabApp
 
             FillPriorityComboBoxes();
 
-
-            TcpClient client = new TcpClient("127.0.0.1", 5000);
-
-            networkConnection = NetworkConnection.Create(client);
-
-            networkConnection.NewMessageReceived += HandleMessage;
-
             LoginForm loginForm = new LoginForm();
             loginForm.ShowDialog();
 
             labelUser.Text = loginForm.Username;
 
-            networkConnection.SendMessage(MessageType.LOGIN, new string[] { labelUser.Text });
+            _user = new(loginForm.Username);
+
+            _user.Connection.NewMessageReceived += HandleMessage;
+
+            _user.Connection.SendMessage(MessageType.LOGIN, new string[] { labelUser.Text });
+
+            btnSendProducts.Enabled = false;
         }
 
         /// <summary>
@@ -230,7 +228,7 @@ namespace LabApp
             else if (listProduct.SelectedItem == null)
             {
                 selectedInListProduct = null;
-                
+
             }
         }
 
@@ -588,25 +586,96 @@ namespace LabApp
 
         }
 
+        internal class User
+        {
+            private readonly string _name;
+
+            private NetworkConnection _connection;
+            internal NetworkConnection Connection { get { return _connection; } }
+            internal int ID { get; set; }
+
+            internal User(string name)
+            {
+                _name = name;
+
+                TcpClient client = new TcpClient("127.0.0.1", 5000);
+
+                _connection = NetworkConnection.Create(client);
+            }
+
+            public override string ToString()
+            {
+                return _name;
+            }
+        }
 
         public void HandleMessage(NetworkMessage message)
         {
             switch (message.Type)
             {
+                case (MessageType.ASSIGNED_NETWORK_ID):
+
+                    int id;
+                    if (int.TryParse(message.Payload[0], out id))
+                    {
+                        _user.ID = id;
+                    }
+
+                    break;
+
                 case (MessageType.CLIENTS_INFO):
-                    listClients.Invoke(() => listClients.Items.Clear());
 
-                    
+                    lock (_lockNetworkUsers)
+                    {
+                        listClients.Invoke(() => listClients.Items.Clear());
+                        networkUsers.Clear();
 
-                    foreach(string client in message.Payload)
-                        listClients.Invoke(() => listClients.Items.Add(client));
+                        int idBuffer;
+                        string nameBuffer;
+                        int index = 0;
 
+                        while (index < message.Payload.Length - 1)
+                        {
+                            if (int.TryParse(message.Payload[index++], out idBuffer))
+                            {
+                                nameBuffer = message.Payload[index++];
 
+                                AddNetworkUser(idBuffer, nameBuffer);
+                            }
+                            else
+                                throw new WrongFormatExсeption("Wrong input message format");
+
+                        }
+                    }
                     break;
 
                 default:
 
                     break;
+            }
+        }
+
+        private void AddNetworkUser(int id, string name)
+        {
+            NetworkUser user = new(name, id);
+
+            lock (_lockNetworkUsers)
+            {
+                networkUsers.Add(user);
+                listClients.Invoke(() => listClients.Items.Add(user));
+            }
+        }
+
+        private void BtnSendProducts_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ListClients_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(listClients.SelectedItem is NetworkUser user)
+            {
+                if(user.ID == networkConnection.)
             }
         }
     }

@@ -5,15 +5,19 @@ namespace ProductTcpShared
 
 
     public class ClientSession
-    {        
-        public ClientSession(TcpClient client)
+    {
+        public ClientSession(TcpClient client, int id)
         {
             Connection = NetworkConnection.Create(client);
+            ID = id;
+            Name = string.Empty;
         }
 
-        public string? Name { get; private set; }
+        public int ID { get; }
 
-        public bool IsLogged => Name != null;
+        public string Name { get; private set; }
+
+        public bool IsLogged => Name != string.Empty;
 
         public NetworkConnection Connection { get; private set; }
 
@@ -21,6 +25,9 @@ namespace ProductTcpShared
         {
             if (IsLogged)
                 throw new Exception("Already logged in");
+            if (username == string.Empty)
+                throw new Exception("Empty string perfomed");
+            
             Name = username;
         }
 

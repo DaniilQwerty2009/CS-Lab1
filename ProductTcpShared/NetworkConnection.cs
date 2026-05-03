@@ -10,6 +10,7 @@ namespace ProductTcpShared
     public enum MessageType
     {
         CLIENTS_INFO,
+        ASSIGNED_NETWORK_ID,
 
         RQUEST_PRODUCTS_DATA,
         SEND_PRODUCTS_DATA,
@@ -27,6 +28,18 @@ namespace ProductTcpShared
             Payload = Array.Empty<string>();
         }
         
+    }
+
+    public class NetworkUser
+    {
+        public readonly string _name;
+        public readonly int _id;
+
+        public NetworkUser(string name, int id)
+        {
+            _name = name;
+            _id = id;
+        }
     }
 
     public class NetworkConnection
@@ -116,9 +129,8 @@ namespace ProductTcpShared
                 }
                 
             }
-            catch(IOException e) 
+            catch(IOException) 
             {
-                Console.WriteLine($"ListenStream catch exсeption: {e.Message}");
                 ConnectionInterrupted?.Invoke(this, EventArgs.Empty);
             }
             finally

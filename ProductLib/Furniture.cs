@@ -176,11 +176,6 @@ namespace ProductLib
 
         public void MoveVisualTo(PointF point)
         { }
-
-        //public bool MoveVisualTo(PointF point, float speed)
-        //{
-        //    return visual.UniformMotion(point.X, point.Y, speed);
-        //}
     }
      
 }

@@ -23,6 +23,8 @@ namespace ProductTcpServer
 
     internal class TcpServer
     {
+        private int _id = 1;
+
         List<ClientSession> _sessions = new List<ClientSession>();
 
         TcpListener _portListener;
@@ -51,7 +53,8 @@ namespace ProductTcpServer
                     Console.WriteLine("***Ожидание очередного подключения***");
                     TcpClient newClient = _portListener.AcceptTcpClient();
 
-                    ClientSession newSession = new(newClient);
+                    ClientSession newSession = new(newClient, _id);
+                    _id++;
 
                     newSession.Connection.NewMessageReceived += message =>
                     {
@@ -69,7 +72,7 @@ namespace ProductTcpServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to listen: {ex.Message}");
+                Console.WriteLine($"Server acception tcp client failed : {ex.Message}");
             }
             finally
             {
@@ -102,18 +105,19 @@ namespace ProductTcpServer
             {
                 if (_sessions.Count > 0)
                 {
-                    string[] payload = new string[_sessions.Count];
+                    string[] payload = new string[_sessions.Count * 2];
                     MessageType type = MessageType.CLIENTS_INFO;
 
 
-                    for (int i = 0; i < _sessions.Count; i++)
+                    for (int i = 0, j = 0; i < _sessions.Count; i++)
                     {
                         if (_sessions[i].Connection.IsOpen && _sessions[i].IsLogged)
                         {
-                            payload[i] = _sessions[i].Name;
+                            payload[j++] = _sessions[i].ID.ToString();
+                            payload[j++] = _sessions[i].Name;
                         }
                     }
-                
+                    
                     foreach (ClientSession session in _sessions)
                     {
                         if (session.IsLogged && session.Connection.IsOpen)
@@ -138,6 +142,8 @@ namespace ProductTcpServer
                     try
                     {
                         session.Login(message.Payload[0]);
+
+                        session.Connection.SendMessage(MessageType.ASSIGNED_NETWORK_ID, new string[] { session.ID.ToString() });
 
                         SendOutClientsInfo();
                     }
