@@ -2,7 +2,9 @@ using Interfaces;
 using ProductLib;
 using ProductTcpShared;
 using System.ComponentModel;
+using System.Diagnostics.Metrics;
 using System.Net.Sockets;
+using System.Text;
 
 
 namespace LabApp
@@ -44,6 +46,7 @@ namespace LabApp
         User _user;
 
         private readonly object _lockNetworkUsers = new object();
+        private readonly object _lockProductsList = new object();
 
         List<NetworkUser> networkUsers = new();
 
@@ -57,9 +60,9 @@ namespace LabApp
 
             worker2 = new();
 
-            int f = Random.Shared.Next(5, 11);
-            int d = Random.Shared.Next(5, 11);
-            CreateExampleProducts((uint)f, (uint)d);
+            //int f = Random.Shared.Next(5, 11);
+            //int d = Random.Shared.Next(5, 11);
+            CreateExampleProducts(2, 2);
 
             worker1.AnotherPartOfWorkDone += RedrawPanelVisualisation;
             worker2.AnotherPartOfWorkDone += RedrawPanelVisualisation;
@@ -110,19 +113,26 @@ namespace LabApp
                 Y = panelVisualisation.Height - ((int)SizeOfPaintedImgEnum.Y),
             };
 
-            for (int i = 0; i < 4; ++i)
+            for (int i = 1; i < 4; ++i)
             {
                 string c = $"Компонент {i}";
                 comp.Add(c);
             }
 
-            for (int i = 0; i < countOfFurniture; ++i)
+            for (int i = 1; i < countOfFurniture; ++i)
             {
-                string n = $"Мебель {i + 1}";
+                string n = $"Мебель {i}";
                 beginPos.X = Random.Shared.Next(borderOfVisual.X);
                 beginPos.Y = Random.Shared.Next(borderOfVisual.Y);
 
-                createdObject = new Furniture(n, i + 10, "Мебель", comp, beginPos);
+                createdObject = new Furniture(n, i + 10, TypesOfProduct.Furniture.GetDescription() , comp);
+
+                if (createdObject is IDrawable dish)
+                {
+
+                    dish.VisualPosition = beginPos;
+                    dish.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+                }
 
                 products.Add(createdObject);
                 listProduct.Items.Add(createdObject);
@@ -131,14 +141,20 @@ namespace LabApp
                 worker1.AddMover(mov);
             }
 
-            for (int i = 0; i < countOfDishes; ++i)
+            for (int i = 1; i < countOfDishes; ++i)
             {
-                string n = $"Посуда {i + 1}";
+                string n = $"Посуда {i}";
 
                 beginPos.X = Random.Shared.Next(borderOfVisual.X);
                 beginPos.Y = Random.Shared.Next(borderOfVisual.Y);
 
-                createdObject = new Dishes(n, i + 1, "Посуда", beginPos);
+                createdObject = new Dishes(n, i, TypesOfProduct.Dish.GetDescription());
+
+                if (createdObject is IDrawable furniture)
+                {
+                    furniture.VisualPosition = beginPos;
+                    furniture.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+                }
 
                 products.Add(createdObject);
                 listProduct.Items.Add(createdObject);
@@ -649,6 +665,12 @@ namespace LabApp
                     }
                     break;
 
+                case (MessageType.PRODUCTS_DATA):
+
+
+
+                    break;
+
                 default:
 
                     break;
@@ -668,14 +690,52 @@ namespace LabApp
 
         private void BtnSendProducts_Click(object sender, EventArgs e)
         {
-
+            List<Product> products = new List<Product>();
         }
 
         private void ListClients_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if(listClients.SelectedItem is NetworkUser user)
+            if (listClients.SelectedItem is NetworkUser user)
             {
-                if(user.ID == networkConnection.)
+                if (user.ID == _user.ID)
+                    btnSendProducts.Enabled = false;
+                else
+                    btnSendProducts.Enabled = true;
+            }
+        }
+
+        private void BtnSendProducts_Click_1(object sender, EventArgs e)
+        {
+            lock(_lockProductsList)
+            {
+                                string[] productsInfo;
+                List<string> prod = new();
+
+
+                foreach(Product product in products)
+                {
+                    if(product is Furniture furniture)
+                    {
+                        prod.Add(TypesOfProduct.Furniture.ToString());
+                        prod.Add(furniture.Name);
+                        prod.Add(furniture.Article.ToString());
+                        prod.Add(furniture.Components.Count().ToString());
+
+                        foreach(String component in furniture.Components)
+                            prod.Add(component);
+                    }
+
+                    if(product is Dishes dish)
+                    {
+                        prod.Add(TypesOfProduct.Dish.ToString());
+                        prod.Add(dish.Name);
+                        prod.Add(dish.Article.ToString());
+                    }
+                }
+
+                productsInfo = prod.ToArray();
+
+                _user.Connection.SendMessage(MessageType.SEND_PRODUCTS_DATA, productsInfo);
             }
         }
     }

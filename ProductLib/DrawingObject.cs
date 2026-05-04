@@ -30,7 +30,7 @@ namespace ProductLib
             if (this.point.Y < 0)
                 this.point.Y = 0;
 
-            this.img = img;                  // Присваиваем ссылку!
+            this.img = img;                  // Присваиваем ссылку
             areaOfVisualisation = new RectangleF(point, sizeOfVisual);
         }
 

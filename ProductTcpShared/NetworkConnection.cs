@@ -11,8 +11,8 @@ namespace ProductTcpShared
     {
         CLIENTS_INFO,
         ASSIGNED_NETWORK_ID,
+        PRODUCTS_DATA,
 
-        RQUEST_PRODUCTS_DATA,
         SEND_PRODUCTS_DATA,
         DISCONNECT,
         LOGIN,
@@ -32,13 +32,18 @@ namespace ProductTcpShared
 
     public class NetworkUser
     {
-        public readonly string _name;
-        public readonly int _id;
+        public string Name { get; private set; }
+        public int ID { get; private set; }
 
         public NetworkUser(string name, int id)
         {
-            _name = name;
-            _id = id;
+            Name = name;
+            ID = id;
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 

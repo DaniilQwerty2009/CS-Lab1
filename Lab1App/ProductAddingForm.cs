@@ -35,15 +35,11 @@ namespace LabApp
 
             foreach(TypesOfProduct s in Enum.GetValues(typeof(TypesOfProduct)))
             {
-                TypeDisplay typeForUI = new TypeDisplay
-                {
-                    Value = s,
-                    Text = s.GetDescription(),
-                };
+                TypeDisplay typeForUI = new TypeDisplay(s, s.GetDescription());
 
                 comboBoxTypes.Items.Add(typeForUI);
             }
-                
+
         }
 
         public Product Product
@@ -126,7 +122,6 @@ namespace LabApp
 
 
             Point beginPos;
-            Point dest;
             Point borderPoint = new Point(borderOfVisual.X, borderOfVisual.Y);
             switch(selectedType.Value)
             {
@@ -134,16 +129,17 @@ namespace LabApp
 
                     
                     beginPos = Mover.GetRandomPoint(borderPoint);
-                    product = new Dishes(textBoxName.Text, article, selectedType.Text, beginPos);
+                    product = new Dishes(textBoxName.Text, article, selectedType.Text);
                     
 
-                    dest = Mover.GetRandomPoint(borderPoint);
                     int speed = ((int)SpeedOfProductVisualisation.SomePixelPerSecond);
 
-                    if (product is IDrawable prodD)
+                    if (product is IDrawable dish)
                     {
-                        prodD.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
-                        mover = new RandomMover(prodD, speed, borderOfVisual);
+
+                        dish.VisualPosition = beginPos;
+                        dish.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+                        mover = new RandomMover(dish, speed, borderOfVisual);
                     }
                         
 
@@ -160,20 +156,21 @@ namespace LabApp
                     }
                     else
                     {
-                        List<string> compBuf = new();
+                        List<string> componenets = new();
                         foreach (string comp in listBoxComponents.Items)
                         {
-                            compBuf.Add(comp);
+                            componenets.Add(comp);
                         }
 
                         beginPos = Mover.GetRandomPoint(borderPoint);
 
-                        product = new Furniture(textBoxName.Text, article, selectedType.Text, compBuf, beginPos);
+                        product = new Furniture(textBoxName.Text, article, selectedType.Text, componenets);
 
-                        if (product is IDrawable prodF)
+                        if (product is IDrawable furniture)
                         {
-                            prodF.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
-                            mover = new LineralMover(prodF, new Point(0, 0), (int)SpeedOfProductVisualisation.SomePixelPerSecond);
+                            furniture.VisualPosition = beginPos;
+                            furniture.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+                            mover = new LineralMover(furniture, new Point(0, 0), (int)SpeedOfProductVisualisation.SomePixelPerSecond);
                         }
                             
                         this.DialogResult = DialogResult.OK;
@@ -223,5 +220,23 @@ namespace LabApp
             else
                 ComponentsEnable = false;
         }
+
+        //internal void CreateDravableDish(TypesOfProduct type, string name, long article, out Mover mover, out Dishes product)
+        //{
+        //    Point beginPos;
+        //    Point borderPoint = new Point(borderOfVisual.X, borderOfVisual.Y);
+
+        //    beginPos = Mover.GetRandomPoint(borderPoint);
+        //    product = new Dishes(textBoxName.Text, article, "Посуда");
+
+        //    int speed = ((int)SpeedOfProductVisualisation.SomePixelPerSecond);
+
+        //    ((IDrawable)product).VisualPosition = beginPos;
+        //    ((IDrawable)product).SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+        //    mover = new RandomMover(product, speed, borderOfVisual);
+
+        //}
+
+
     }
 }

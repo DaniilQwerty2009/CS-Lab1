@@ -403,6 +403,7 @@
             btnSendProducts.TabIndex = 24;
             btnSendProducts.Text = "Отправить";
             btnSendProducts.UseVisualStyleBackColor = true;
+            btnSendProducts.Click += BtnSendProducts_Click_1;
             // 
             // ApplicationForm
             // 

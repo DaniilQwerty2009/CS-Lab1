@@ -10,9 +10,9 @@ namespace ProductLib
     {
         private DrawingObject visual;
 
-        public Dishes(string name, long article, string type, Point positionOfVisualRep) : base(name, article, type)   
+        public Dishes(string name, long article, string type) : base(name, article, type)   
         {
-            visual = new DrawingObject(Properties.Resources.Dishes, positionOfVisualRep);
+            visual = new DrawingObject(Properties.Resources.Dishes, new(0,0));
         }
 
         public Dishes(Dishes Source, DrawingObject visualSource): base(Source)
@@ -34,7 +34,7 @@ namespace ProductLib
             {
                 return visual.Point;
             }
-            private set
+            set
             {
                 visual.Point = value;
             }
@@ -65,15 +65,6 @@ namespace ProductLib
             visual.Point = p;
         }
 
-        public void MoveVisualTo(PointF point)
-        {
-
-        }
-
-        //public bool MoveVisualTo(PointF point, float speed)
-        //{
-        //    return visual.UniformMotion(point.X, point.Y, speed);
-        //}
 
         public override Product Clone()
         {

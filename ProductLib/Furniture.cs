@@ -10,7 +10,7 @@ namespace ProductLib
         private List<string> components = new();
 
         private DrawingObject visual;
-        public Furniture(string name, long article, string type, IEnumerable<string> components, Point positionOfVisual)
+        public Furniture(string name, long article, string type, IEnumerable<string> components)
         : base(name, article, type)
         {
             if(components != null)
@@ -28,7 +28,7 @@ namespace ProductLib
                 throw new EmptyComponentsExceptions();
             }
 
-            visual = new DrawingObject(Properties.Resources.Furniture, positionOfVisual);
+            visual = new DrawingObject(Properties.Resources.Furniture, new(0,0));
         }
 
         public Furniture(Furniture source, DrawingObject visualSource) : base(source)
@@ -49,7 +49,7 @@ namespace ProductLib
         public PointF VisualPosition
         {
             get { return visual.Point; }
-            private set { visual.Point = value; }
+            set { visual.Point = value; }
         }
 
         public Size SizeOfVisual
@@ -167,15 +167,6 @@ namespace ProductLib
             return new Furniture(this, visual);
         }
    
-        public void MoveVisual(float dx, float dy)
-        {
-            PointF p = visual.Point;
-            p.X = dx; p.Y = dy;
-            visual.Point = p;
-        }
-
-        public void MoveVisualTo(PointF point)
-        { }
     }
      
 }

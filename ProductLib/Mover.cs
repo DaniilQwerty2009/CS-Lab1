@@ -56,16 +56,6 @@ namespace ProductLib
             }
         }
 
-        public bool Finish
-        {
-            get { return finish; }
-        }
-
-        public float Speed
-        {
-            get { return speed; }
-        }
-
 
         public PointF CurrentPosition
         {
@@ -111,7 +101,8 @@ namespace ProductLib
             x1 += dx * speed * dt;
             y1 += dy * speed * dt;
 
-            visual.MoveVisual(x1, y1);
+
+            visual.VisualPosition = new PointF(x1, y1);
 
         }
 

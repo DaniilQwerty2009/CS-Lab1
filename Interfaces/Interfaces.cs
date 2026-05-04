@@ -18,12 +18,10 @@ namespace Interfaces
 
     public interface IDrawable
     {
-        public void MoveVisual(float x, float y);
-        public void MoveVisualTo(PointF point);
-        //public bool MoveVisualTo(PointF point, float speed);
         public System.Drawing.PointF VisualPosition
         {
             get;
+            set;
         }
 
         public System.Drawing.Image Img

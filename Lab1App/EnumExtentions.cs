@@ -14,7 +14,7 @@ namespace LabApp
     {
 
         /// <summary>
-        /// Возвращает сроку описания поля перечисления
+        /// Возвращает строку описания поля перечисления
         /// </summary>
         internal static string GetDescription<T>(this T enumType)
             where T : Enum
@@ -46,9 +46,15 @@ namespace LabApp
     /// </summary>
     internal class TypeDisplay
     {
-        public TypesOfProduct Value { get; set; }
+        internal TypeDisplay(TypesOfProduct value, string text)
+        {
+            Value = value;
+            Text = text;
+        }
 
-        public string? Text { get; set; }
+        public TypesOfProduct Value { get; private set; }
+
+        public string Text { get; private set; }
 
         public override string? ToString() => Text;
     }
