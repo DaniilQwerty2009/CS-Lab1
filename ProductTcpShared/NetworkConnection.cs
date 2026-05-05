@@ -54,11 +54,11 @@ namespace ProductTcpShared
         private readonly List<byte> _dataBuffer = new();
         private bool _isOpen;
 
+        public NetworkStream Stream { get { return _stream; } }
         public bool IsOpen { get { return _isOpen; } }
 
         public event Action<NetworkMessage>? NewMessageReceived;
         public event EventHandler? ConnectionInterrupted;
-        // event ClientWasClosed
 
         private NetworkConnection(TcpClient client) 
         {

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -172,7 +173,36 @@ namespace ProductTcpServer
 
                 case (MessageType.SEND_PRODUCTS_DATA):
 
-                    s
+                    int id;
+
+                    if(!int.TryParse(message.Payload[0], out id))
+                    {
+                        return;
+                    }
+
+
+                    int index = 0;
+                    ClientSession destination;
+
+                    lock(_clientsLock)
+                    {
+                        for(; index < _sessions.Count; ++index)
+                        {
+                            if (_sessions[index].ID == id)
+                            {
+                                destination = _sessions[index];
+
+                                message.Payload.TrimStart(message.Payload[0]);
+
+                                destination.Connection.SendMessage(MessageType.PRODUCTS_DATA, message.Payload);
+
+                                break;
+                            }
+                        } 
+                    }
+
+                    
+                    
 
                     break;
 

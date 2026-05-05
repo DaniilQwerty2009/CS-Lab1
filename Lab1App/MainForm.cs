@@ -643,7 +643,7 @@ namespace LabApp
 
                     lock (_lockNetworkUsers)
                     {
-                        listClients.Invoke(() => listClients.Items.Clear());
+                        listNetworkUsers.Invoke(() => listNetworkUsers.Items.Clear());
                         networkUsers.Clear();
 
                         int idBuffer;
@@ -656,7 +656,7 @@ namespace LabApp
                             {
                                 nameBuffer = message.Payload[index++];
 
-                                AddNetworkUser(idBuffer, nameBuffer);
+                                AddNetworkUserToList(idBuffer, nameBuffer);
                             }
                             else
                                 throw new WrongFormatExсeption("Wrong input message format");
@@ -667,7 +667,54 @@ namespace LabApp
 
                 case (MessageType.PRODUCTS_DATA):
 
+                    string[] load = message.Payload;
+                    TypesOfProduct type;
+                    int i = 0;
 
+                    string name;
+                    long article;
+                    int componentsCount;
+                    List<string> components = new();
+
+                    Product product;
+
+                    do
+                    {
+                        Enum.TryParse(load[i++], out type);
+
+                        switch (type)
+                        {
+                            case (TypesOfProduct.Furniture):
+
+                                components.Clear();
+
+                                name = load[i++];
+                                article = int.Parse(load[i++]);
+                                componentsCount = int.Parse(load[i++]);
+
+                                for (int j = 0; j < componentsCount; ++j)
+                                    components.Add(load[i++]);
+
+                                product = new Furniture(name, article, EnumExtentions.GetDescription(TypesOfProduct.Furniture), components);
+
+                                listProduct.Invoke(() => listProduct.Items.Add(product));
+
+                                break;
+
+                            case (TypesOfProduct.Dish):
+
+                                name = load[i++];
+                                article = int.Parse(load[i++]);
+
+                                product = new Dishes(name, article, EnumExtentions.GetDescription(TypesOfProduct.Dish));
+
+                                listProduct.Invoke(() => listProduct.Items.Add(product));
+
+                                break;
+                        }
+
+
+                    } while (i < load.Length);
 
                     break;
 
@@ -677,25 +724,21 @@ namespace LabApp
             }
         }
 
-        private void AddNetworkUser(int id, string name)
+        private void AddNetworkUserToList(int id, string name)
         {
             NetworkUser user = new(name, id);
 
             lock (_lockNetworkUsers)
             {
                 networkUsers.Add(user);
-                listClients.Invoke(() => listClients.Items.Add(user));
+                listNetworkUsers.Invoke(() => listNetworkUsers.Items.Add(user));
             }
         }
 
-        private void BtnSendProducts_Click(object sender, EventArgs e)
-        {
-            List<Product> products = new List<Product>();
-        }
 
         private void ListClients_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (listClients.SelectedItem is NetworkUser user)
+            if (listNetworkUsers.SelectedItem is NetworkUser user)
             {
                 if (user.ID == _user.ID)
                     btnSendProducts.Enabled = false;
@@ -704,38 +747,40 @@ namespace LabApp
             }
         }
 
-        private void BtnSendProducts_Click_1(object sender, EventArgs e)
+        private void BtnSendProducts_Click(object sender, EventArgs e)
         {
             lock(_lockProductsList)
             {
-                                string[] productsInfo;
-                List<string> prod = new();
+                string[] payload;
+                List<string> load = new();
 
+                if(listNetworkUsers.SelectedItem != null)
+                    load.Add(((NetworkUser)listNetworkUsers.SelectedItem).ID.ToString());
 
                 foreach(Product product in products)
                 {
                     if(product is Furniture furniture)
                     {
-                        prod.Add(TypesOfProduct.Furniture.ToString());
-                        prod.Add(furniture.Name);
-                        prod.Add(furniture.Article.ToString());
-                        prod.Add(furniture.Components.Count().ToString());
+                        load.Add(TypesOfProduct.Furniture.ToString());
+                        load.Add(furniture.Name);
+                        load.Add(furniture.Article.ToString());
+                        load.Add(furniture.Components.Count().ToString());
 
                         foreach(String component in furniture.Components)
-                            prod.Add(component);
+                            load.Add(component);
                     }
 
                     if(product is Dishes dish)
                     {
-                        prod.Add(TypesOfProduct.Dish.ToString());
-                        prod.Add(dish.Name);
-                        prod.Add(dish.Article.ToString());
+                        load.Add(TypesOfProduct.Dish.ToString());
+                        load.Add(dish.Name);
+                        load.Add(dish.Article.ToString());
                     }
                 }
 
-                productsInfo = prod.ToArray();
+                payload = load.ToArray();
 
-                _user.Connection.SendMessage(MessageType.SEND_PRODUCTS_DATA, productsInfo);
+                _user.Connection.SendMessage(MessageType.SEND_PRODUCTS_DATA, payload);
             }
         }
     }
