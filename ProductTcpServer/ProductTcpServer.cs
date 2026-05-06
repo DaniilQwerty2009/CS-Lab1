@@ -67,7 +67,10 @@ namespace ProductTcpServer
                         ExcludeSession(newSession);
                     };
 
-                    _sessions.Add(newSession);
+                    lock(_clientsLock)
+                    {
+                        _sessions.Add(newSession);
+                    }
                 }
 
             }
@@ -106,7 +109,7 @@ namespace ProductTcpServer
             {
                 if (_sessions.Count > 0)
                 {
-                    string[] payload = new string[_sessions.Count * 2];
+                    List<string> payload = new();
                     MessageType type = MessageType.CLIENTS_INFO;
 
 
@@ -114,15 +117,15 @@ namespace ProductTcpServer
                     {
                         if (_sessions[i].Connection.IsOpen && _sessions[i].IsLogged)
                         {
-                            payload[j++] = _sessions[i].ID.ToString();
-                            payload[j++] = _sessions[i].Name;
+                            payload.Add(_sessions[i].ID.ToString());
+                            payload.Add(_sessions[i].Name);
                         }
                     }
                     
                     foreach (ClientSession session in _sessions)
                     {
                         if (session.IsLogged && session.Connection.IsOpen)
-                            session.Connection.SendMessage(type, payload);
+                            session.Connection.SendMessage(type, payload.ToArray());
                     }
                 }
             }
@@ -137,7 +140,7 @@ namespace ProductTcpServer
             switch (message.Type)
             {
                 case (MessageType.LOGIN):
-                    if (message.Payload == Array.Empty<string>())
+                    if (message.Payload.Length == 0)
                         return;
 
                     try

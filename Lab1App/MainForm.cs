@@ -62,7 +62,7 @@ namespace LabApp
 
             //int f = Random.Shared.Next(5, 11);
             //int d = Random.Shared.Next(5, 11);
-            CreateExampleProducts(2, 2);
+            CreateExampleProducts(4, 4);
 
             worker1.AnotherPartOfWorkDone += RedrawPanelVisualisation;
             worker2.AnotherPartOfWorkDone += RedrawPanelVisualisation;
@@ -723,7 +723,7 @@ namespace LabApp
 
                                         worker1.AddMover(mover);
 
-                                        panelVisualisation.Invalidate();
+                                        panelVisualisation.Invoke(() => panelVisualisation.Invalidate());
                                     }
 
 
@@ -798,15 +798,47 @@ namespace LabApp
         {
             lock(_lockProductsList)
             {
+                if (products.Count == 0)
+                    return;
+
                 string[] payload;
                 List<string> load = new();
 
                 if(listNetworkUsers.SelectedItem != null)
                     load.Add(((NetworkUser)listNetworkUsers.SelectedItem).ID.ToString());
 
-                foreach(Product product in products)
+                List<int>  indexes = new();
+                for (int i = 0; i < products.Count; i++)
                 {
-                    if(product is Furniture furniture)
+                    indexes.Add(i);
+                }
+
+                int ammountToSend;
+                if (int.TryParse(textBoxToSendAmmount.Text, out ammountToSend))
+                {
+                    if (ammountToSend <= 0)
+                        return;
+                    else if (ammountToSend > products.Count)
+                        ammountToSend = products.Count;
+                }
+                else
+                {
+                    WrongFormatMessage msg = new WrongFormatMessage();
+                    msg.Show();
+                    return;
+                }
+
+                int[] indexesToSend = new int[ammountToSend];
+                for(int i = 0; i < ammountToSend; ++i)
+                {
+                    int x = Random.Shared.Next(0, indexes.Count);
+                    indexesToSend[i] = indexes[x];
+                    indexes.RemoveAt(x);
+                }
+                
+                foreach(int i in indexesToSend)
+                {
+                    if(products[i] is Furniture furniture)
                     {
                         load.Add(TypesOfProduct.Furniture.ToString());
                         load.Add(furniture.Name);
@@ -817,7 +849,7 @@ namespace LabApp
                             load.Add(component);
                     }
 
-                    if(product is Dishes dish)
+                    if(products[i] is Dishes dish)
                     {
                         load.Add(TypesOfProduct.Dish.ToString());
                         load.Add(dish.Name);

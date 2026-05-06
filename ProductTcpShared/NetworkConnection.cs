@@ -54,6 +54,7 @@ namespace ProductTcpShared
         private readonly List<byte> _dataBuffer = new();
         private bool _isOpen;
 
+        private readonly object _sendLock = new object();
         public NetworkStream Stream { get { return _stream; } }
         public bool IsOpen { get { return _isOpen; } }
 
@@ -234,7 +235,10 @@ namespace ProductTcpShared
         {
             byte[] data = SerialiseMessage(type, payload);
 
-            _stream.Write(data, 0, data.Length);
+            lock(_sendLock)
+            {
+                _stream.Write(data, 0, data.Length);
+            }
         }
     }
 }

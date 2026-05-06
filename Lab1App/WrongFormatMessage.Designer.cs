@@ -37,9 +37,9 @@
             labelWrongFormat.AutoSize = true;
             labelWrongFormat.Location = new Point(37, 52);
             labelWrongFormat.Name = "labelWrongFormat";
-            labelWrongFormat.Size = new Size(199, 20);
+            labelWrongFormat.Size = new Size(188, 20);
             labelWrongFormat.TabIndex = 0;
-            labelWrongFormat.Text = "Неверный формат данных!";
+            labelWrongFormat.Text = "Неверный формат ввода!";
             // 
             // BtnOK
             // 
