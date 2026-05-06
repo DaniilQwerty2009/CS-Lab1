@@ -192,9 +192,9 @@ namespace ProductTcpServer
                             {
                                 destination = _sessions[index];
 
-                                message.Payload.TrimStart(message.Payload[0]);
+                                string[] payload = message.Payload[1..];
 
-                                destination.Connection.SendMessage(MessageType.PRODUCTS_DATA, message.Payload);
+                                destination.Connection.SendMessage(MessageType.PRODUCTS_DATA, payload);
 
                                 break;
                             }

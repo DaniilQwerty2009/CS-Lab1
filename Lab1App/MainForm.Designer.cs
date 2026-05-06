@@ -62,6 +62,7 @@
             labelUser = new Label();
             listNetworkUsers = new ListBox();
             btnSendProducts = new Button();
+            comboBoxProductsToSend = new ComboBox();
             leftPanel.SuspendLayout();
             rightPanel.SuspendLayout();
             toolStrip1.SuspendLayout();
@@ -415,7 +416,7 @@
             // 
             // btnSendProducts
             // 
-            btnSendProducts.Location = new Point(322, 531);
+            btnSendProducts.Location = new Point(321, 531);
             btnSendProducts.Margin = new Padding(3, 2, 3, 2);
             btnSendProducts.Name = "btnSendProducts";
             btnSendProducts.Size = new Size(82, 22);
@@ -424,11 +425,19 @@
             btnSendProducts.UseVisualStyleBackColor = true;
             btnSendProducts.Click += BtnSendProducts_Click;
             // 
+            // comboBoxProductsToSend
+            // 
+            comboBoxProductsToSend.Location = new Point(321, 558);
+            comboBoxProductsToSend.Name = "comboBoxProductsToSend";
+            comboBoxProductsToSend.Size = new Size(121, 23);
+            comboBoxProductsToSend.TabIndex = 25;
+            // 
             // ApplicationForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(979, 720);
+            Controls.Add(comboBoxProductsToSend);
             Controls.Add(btnSendProducts);
             Controls.Add(listNetworkUsers);
             Controls.Add(labelUser);
@@ -455,7 +464,6 @@
             Margin = new Padding(3, 2, 3, 2);
             Name = "ApplicationForm";
             Text = " ";
-            Click += BtnSendProducts_Click;
             leftPanel.ResumeLayout(false);
             rightPanel.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
@@ -500,5 +508,6 @@
         private Label labelUser;
         private ListBox listNetworkUsers;
         private Button btnSendProducts;
+        private ComboBox comboBoxProductsToSend;
     }
 }

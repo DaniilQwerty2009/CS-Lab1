@@ -122,13 +122,13 @@ namespace LabApp
 
 
             Point beginPos;
-            Point borderPoint = new Point(borderOfVisual.X, borderOfVisual.Y);
+            //Point borderPoint = new Point(borderOfVisual.X, borderOfVisual.Y);
             switch(selectedType.Value)
             {
                 case TypesOfProduct.Dish:
 
                     
-                    beginPos = Mover.GetRandomPoint(borderPoint);
+                    beginPos = Mover.GetRandomPoint(borderOfVisual);
                     product = new Dishes(textBoxName.Text, article, selectedType.Text);
                     
 
@@ -162,7 +162,7 @@ namespace LabApp
                             componenets.Add(comp);
                         }
 
-                        beginPos = Mover.GetRandomPoint(borderPoint);
+                        beginPos = Mover.GetRandomPoint(borderOfVisual);
 
                         product = new Furniture(textBoxName.Text, article, selectedType.Text, componenets);
 

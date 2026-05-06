@@ -388,7 +388,7 @@ namespace LabApp
         private void BtnInfo_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Программа для работы с коллекцией мебели (добавление, редактирование, удаление, просмотр). " +
-                "\nВерсия 2.0 " +
+                "\nВерсия 3.0 " +
                 "\nФИО студента: Гольятпов Д.И. " +
                 "\nГруппа: ДТ-460");
         }
@@ -678,44 +678,91 @@ namespace LabApp
 
                     Product product;
 
-                    do
+
+                    lock(_lockProductsList)
                     {
-                        Enum.TryParse(load[i++], out type);
-
-                        switch (type)
+                        Mover mover;
+                        Point borderPoint = new()
                         {
-                            case (TypesOfProduct.Furniture):
+                            X = panelVisualisation.Width,
+                            Y = panelVisualisation.Height,
+                        };
+                        int speed = ((int)SpeedOfProductVisualisation.SomePixelPerSecond);
 
-                                components.Clear();
+                        do
+                        {
+                            Enum.TryParse(load[i++], out type);
+                            Point paintBorder = new()
+                            {
+                                X = borderPoint.X - ((int)SizeOfPaintedImgEnum.X),
+                                Y = borderPoint.Y - ((int)SizeOfPaintedImgEnum.Y),
+                            };
+                            Point beginPos = Mover.GetRandomPoint(paintBorder);
 
-                                name = load[i++];
-                                article = int.Parse(load[i++]);
-                                componentsCount = int.Parse(load[i++]);
+                            switch (type)
+                            {
+                                case (TypesOfProduct.Furniture):
 
-                                for (int j = 0; j < componentsCount; ++j)
-                                    components.Add(load[i++]);
+                                    components.Clear();
 
-                                product = new Furniture(name, article, EnumExtentions.GetDescription(TypesOfProduct.Furniture), components);
+                                    name = load[i++];
+                                    article = int.Parse(load[i++]);
+                                    componentsCount = int.Parse(load[i++]);
 
-                                listProduct.Invoke(() => listProduct.Items.Add(product));
+                                    for (int j = 0; j < componentsCount; ++j)
+                                        components.Add(load[i++]);
 
-                                break;
-
-                            case (TypesOfProduct.Dish):
-
-                                name = load[i++];
-                                article = int.Parse(load[i++]);
-
-                                product = new Dishes(name, article, EnumExtentions.GetDescription(TypesOfProduct.Dish));
-
-                                listProduct.Invoke(() => listProduct.Items.Add(product));
-
-                                break;
-                        }
+                                    product = new Furniture(name, article, EnumExtentions.GetDescription(TypesOfProduct.Furniture), components);
 
 
-                    } while (i < load.Length);
+                                    if (product is IDrawable furniture)
+                                    {
+                                        furniture.VisualPosition = beginPos;
+                                        furniture.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+                                        mover = new LineralMover(furniture, new Point(0, 0), (int)SpeedOfProductVisualisation.SomePixelPerSecond);
 
+                                        worker1.AddMover(mover);
+
+                                        panelVisualisation.Invalidate();
+                                    }
+
+
+                                    listProduct.Invoke(() => listProduct.Items.Add(product));
+                                    products.Add(product);
+
+
+                                    break;
+
+                                case (TypesOfProduct.Dish):
+
+                                    name = load[i++];
+                                    article = int.Parse(load[i++]);
+
+                                    product = new Dishes(name, article, EnumExtentions.GetDescription(TypesOfProduct.Dish));
+
+                                    listProduct.Invoke(() => listProduct.Items.Add(product));
+                                    products.Add(product);
+
+                                    
+                                    if (product is IDrawable dish)
+                                    {
+
+                                        dish.VisualPosition = beginPos;
+                                        dish.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
+                                        mover = new RandomMover(dish, speed, borderPoint);
+
+                                        worker2.AddMover(mover);
+
+                                        panelVisualisation.Invalidate();
+                                    }
+
+                                    break;
+                            }
+
+
+                        } while (i < load.Length);
+
+                    }
                     break;
 
                 default:
