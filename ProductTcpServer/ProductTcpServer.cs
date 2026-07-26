@@ -1,8 +1,5 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.Contracts;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using ProductTcpShared;
 
 
@@ -36,7 +33,7 @@ namespace ProductTcpServer
         {
             _portListener = new TcpListener(IPAddress.Any, port);
 
-            Console.WriteLine("***Создан локальный сервер***");
+            Console.WriteLine("Создан локальный сервер");
             Console.Write(address);
             Console.WriteLine($":{port}");
         }
@@ -45,13 +42,12 @@ namespace ProductTcpServer
         {
             _portListener.Start();
 
-            Console.WriteLine("***Сервер запущен***");
+            Console.WriteLine("Сервер запущен");
 
             try
             {
                 while (true)
                 {
-                    Console.WriteLine("***Ожидание очередного подключения***");
                     TcpClient newClient = _portListener.AcceptTcpClient();
 
                     ClientSession newSession = new(newClient, _id);
@@ -113,7 +109,7 @@ namespace ProductTcpServer
                     MessageType type = MessageType.CLIENTS_INFO;
 
 
-                    for (int i = 0, j = 0; i < _sessions.Count; i++)
+                    for (int i = 0; i < _sessions.Count; i++)
                     {
                         if (_sessions[i].Connection.IsOpen && _sessions[i].IsLogged)
                         {
@@ -163,8 +159,6 @@ namespace ProductTcpServer
 
                     lock(_clientsLock)
                     {
-                        Console.WriteLine("***Клиент инициировал завершение сессии***");
-
                         _sessions.Remove(session);
 
                         session.End();

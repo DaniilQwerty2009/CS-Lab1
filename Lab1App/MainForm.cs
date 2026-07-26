@@ -2,14 +2,12 @@ using Interfaces;
 using ProductLib;
 using ProductTcpShared;
 using System.ComponentModel;
-using System.Diagnostics.Metrics;
 using System.Net.Sockets;
-using System.Text;
 
 
 namespace LabApp
 {
-    enum SpeedOfProductVisualisation { SomePixelPerSecond = 30};
+    enum SpeedOfProductVisualisation { ThitryPixelPerSecond = 30};
     enum SizeOfPaintedImgEnum {  X = 50, Y = 50};
 
     internal enum TypesOfProduct 
@@ -60,8 +58,7 @@ namespace LabApp
 
             worker2 = new();
 
-            //int f = Random.Shared.Next(5, 11);
-            //int d = Random.Shared.Next(5, 11);
+
             CreateExampleProducts(4, 4);
 
             worker1.AnotherPartOfWorkDone += RedrawPanelVisualisation;
@@ -92,6 +89,8 @@ namespace LabApp
             _user = new(loginForm.Username);
 
             _user.Connection.NewMessageReceived += HandleMessage;
+
+            FormClosing += (sender, e) => _user.Connection.RequestDisconnect();
 
             _user.Connection.SendMessage(MessageType.LOGIN, new string[] { labelUser.Text });
 
@@ -125,7 +124,7 @@ namespace LabApp
                 beginPos.X = Random.Shared.Next(borderOfVisual.X);
                 beginPos.Y = Random.Shared.Next(borderOfVisual.Y);
 
-                createdObject = new Furniture(n, i + 10, TypesOfProduct.Furniture.GetDescription() , comp);
+                createdObject = new Furniture(n, i + 10, TypesOfProduct.Furniture.GetDescription(), comp);
 
                 if (createdObject is IDrawable dish)
                 {
@@ -137,7 +136,7 @@ namespace LabApp
                 products.Add(createdObject);
                 listProduct.Items.Add(createdObject);
 
-                mov = new LineralMover((IDrawable)createdObject, new(0, 0), ((int)SpeedOfProductVisualisation.SomePixelPerSecond));
+                mov = new LineralMover((IDrawable)createdObject, new(0, 0), ((int)SpeedOfProductVisualisation.ThitryPixelPerSecond));
                 worker1.AddMover(mov);
             }
 
@@ -159,7 +158,7 @@ namespace LabApp
                 products.Add(createdObject);
                 listProduct.Items.Add(createdObject);
 
-                mov = new RandomMover((IDrawable)createdObject, ((int)SpeedOfProductVisualisation.SomePixelPerSecond), borderOfVisual);
+                mov = new RandomMover((IDrawable)createdObject, ((int)SpeedOfProductVisualisation.ThitryPixelPerSecond), borderOfVisual);
                 worker2.AddMover(mov);
             }
         }
@@ -606,7 +605,7 @@ namespace LabApp
         {
             private readonly string _name;
 
-            private NetworkConnection _connection;
+            private readonly NetworkConnection _connection;
             internal NetworkConnection Connection { get { return _connection; } }
             internal int ID { get; set; }
 
@@ -679,7 +678,7 @@ namespace LabApp
                     Product product;
 
 
-                    lock(_lockProductsList)
+                    lock (_lockProductsList)
                     {
                         Mover mover;
                         Point borderPoint = new()
@@ -687,11 +686,11 @@ namespace LabApp
                             X = panelVisualisation.Width,
                             Y = panelVisualisation.Height,
                         };
-                        int speed = ((int)SpeedOfProductVisualisation.SomePixelPerSecond);
+                        int speed = ((int)SpeedOfProductVisualisation.ThitryPixelPerSecond);
 
                         do
                         {
-                            Enum.TryParse(load[i++], out type);
+                            Enum.Tr(load[i++], out type);
                             Point paintBorder = new()
                             {
                                 X = borderPoint.X - ((int)SizeOfPaintedImgEnum.X),
@@ -719,7 +718,7 @@ namespace LabApp
                                     {
                                         furniture.VisualPosition = beginPos;
                                         furniture.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
-                                        mover = new LineralMover(furniture, new Point(0, 0), (int)SpeedOfProductVisualisation.SomePixelPerSecond);
+                                        mover = new LineralMover(furniture, new Point(0, 0), (int)SpeedOfProductVisualisation.ThitryPixelPerSecond);
 
                                         worker1.AddMover(mover);
 
@@ -743,13 +742,13 @@ namespace LabApp
                                     listProduct.Invoke(() => listProduct.Items.Add(product));
                                     products.Add(product);
 
-                                    
+
                                     if (product is IDrawable dish)
                                     {
 
                                         dish.VisualPosition = beginPos;
                                         dish.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
-                                        mover = new RandomMover(dish, speed, borderPoint);
+                                        mover = new RandomMover(dish, speed, paintBorder);
 
                                         worker2.AddMover(mover);
 
@@ -796,7 +795,7 @@ namespace LabApp
 
         private void BtnSendProducts_Click(object sender, EventArgs e)
         {
-            lock(_lockProductsList)
+            lock (_lockProductsList)
             {
                 if (products.Count == 0)
                     return;
@@ -804,10 +803,10 @@ namespace LabApp
                 string[] payload;
                 List<string> load = new();
 
-                if(listNetworkUsers.SelectedItem != null)
+                if (listNetworkUsers.SelectedItem != null)
                     load.Add(((NetworkUser)listNetworkUsers.SelectedItem).ID.ToString());
 
-                List<int>  indexes = new();
+                List<int> indexes = new();
                 for (int i = 0; i < products.Count; i++)
                 {
                     indexes.Add(i);
@@ -829,27 +828,27 @@ namespace LabApp
                 }
 
                 int[] indexesToSend = new int[ammountToSend];
-                for(int i = 0; i < ammountToSend; ++i)
+                for (int i = 0; i < ammountToSend; ++i)
                 {
                     int x = Random.Shared.Next(0, indexes.Count);
                     indexesToSend[i] = indexes[x];
                     indexes.RemoveAt(x);
                 }
-                
-                foreach(int i in indexesToSend)
+
+                foreach (int i in indexesToSend)
                 {
-                    if(products[i] is Furniture furniture)
+                    if (products[i] is Furniture furniture)
                     {
                         load.Add(TypesOfProduct.Furniture.ToString());
                         load.Add(furniture.Name);
                         load.Add(furniture.Article.ToString());
                         load.Add(furniture.Components.Count().ToString());
 
-                        foreach(String component in furniture.Components)
+                        foreach (String component in furniture.Components)
                             load.Add(component);
                     }
 
-                    if(products[i] is Dishes dish)
+                    if (products[i] is Dishes dish)
                     {
                         load.Add(TypesOfProduct.Dish.ToString());
                         load.Add(dish.Name);

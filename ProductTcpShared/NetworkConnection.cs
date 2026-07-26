@@ -27,7 +27,6 @@ namespace ProductTcpShared
         {
             Payload = Array.Empty<string>();
         }
-        
     }
 
     public class NetworkUser
@@ -56,7 +55,11 @@ namespace ProductTcpShared
 
         private readonly object _sendLock = new object();
         public NetworkStream Stream { get { return _stream; } }
-        public bool IsOpen { get { return _isOpen; } }
+        public bool IsOpen 
+        { 
+            get { return _isOpen; }
+            private set { _isOpen = value; } 
+        }
 
         public event Action<NetworkMessage>? NewMessageReceived;
         public event EventHandler? ConnectionInterrupted;
@@ -139,6 +142,10 @@ namespace ProductTcpShared
             {
                 ConnectionInterrupted?.Invoke(this, EventArgs.Empty);
             }
+            catch (ObjectDisposedException)
+            {
+                ConnectionInterrupted?.Invoke(this, EventArgs.Empty);
+            }
             finally
             {
                 Close();
@@ -185,13 +192,9 @@ namespace ProductTcpShared
             if (frame.Count == 0)
                 return false;
 
-            message = new();
-
             string msg = Encoding.UTF8.GetString(frame.ToArray());
 
-            frame.Clear();
-            
-
+        
             string[] parts = msg.Split('|', 2);
 
             if (Enum.TryParse(parts[0], out MessageType result))

@@ -64,6 +64,7 @@
             btnSendProducts = new Button();
             textBoxToSendAmmount = new TextBox();
             labelProductsAmmount = new Label();
+            label1 = new Label();
             leftPanel.SuspendLayout();
             rightPanel.SuspendLayout();
             toolStrip1.SuspendLayout();
@@ -373,16 +374,16 @@
             // labelLocalConnection
             // 
             labelLocalConnection.AutoSize = true;
-            labelLocalConnection.Location = new Point(15, 643);
+            labelLocalConnection.Location = new Point(11, 658);
             labelLocalConnection.Name = "labelLocalConnection";
-            labelLocalConnection.Size = new Size(173, 20);
+            labelLocalConnection.Size = new Size(117, 20);
             labelLocalConnection.TabIndex = 21;
-            labelLocalConnection.Text = "Локальное соединение";
+            labelLocalConnection.Text = "Локальная сеть";
             // 
             // labelUser
             // 
             labelUser.AutoSize = true;
-            labelUser.Location = new Point(15, 671);
+            labelUser.Location = new Point(132, 625);
             labelUser.Name = "labelUser";
             labelUser.Size = new Size(0, 20);
             labelUser.TabIndex = 22;
@@ -390,16 +391,16 @@
             // listNetworkUsers
             // 
             listNetworkUsers.FormattingEnabled = true;
-            listNetworkUsers.Location = new Point(15, 708);
+            listNetworkUsers.Location = new Point(11, 682);
             listNetworkUsers.Margin = new Padding(3, 4, 3, 4);
             listNetworkUsers.Name = "listNetworkUsers";
-            listNetworkUsers.Size = new Size(334, 184);
+            listNetworkUsers.Size = new Size(335, 184);
             listNetworkUsers.TabIndex = 23;
             listNetworkUsers.SelectedIndexChanged += ListClients_SelectedIndexChanged;
             // 
             // btnSendProducts
             // 
-            btnSendProducts.Location = new Point(368, 863);
+            btnSendProducts.Location = new Point(368, 837);
             btnSendProducts.Name = "btnSendProducts";
             btnSendProducts.Size = new Size(94, 29);
             btnSendProducts.TabIndex = 24;
@@ -409,7 +410,7 @@
             // 
             // textBoxToSendAmmount
             // 
-            textBoxToSendAmmount.Location = new Point(368, 830);
+            textBoxToSendAmmount.Location = new Point(368, 804);
             textBoxToSendAmmount.Name = "textBoxToSendAmmount";
             textBoxToSendAmmount.Size = new Size(94, 27);
             textBoxToSendAmmount.TabIndex = 25;
@@ -417,17 +418,27 @@
             // labelProductsAmmount
             // 
             labelProductsAmmount.AutoSize = true;
-            labelProductsAmmount.Location = new Point(368, 807);
+            labelProductsAmmount.Location = new Point(368, 781);
             labelProductsAmmount.Name = "labelProductsAmmount";
             labelProductsAmmount.Size = new Size(58, 20);
             labelProductsAmmount.TabIndex = 26;
             labelProductsAmmount.Text = "Кол-во";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(12, 625);
+            label1.Name = "label1";
+            label1.Size = new Size(107, 20);
+            label1.TabIndex = 27;
+            label1.Text = "Пользователь";
             // 
             // ApplicationForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1119, 960);
+            Controls.Add(label1);
             Controls.Add(labelProductsAmmount);
             Controls.Add(textBoxToSendAmmount);
             Controls.Add(btnSendProducts);
@@ -501,5 +512,6 @@
         private Button btnSendProducts;
         private TextBox textBoxToSendAmmount;
         private Label labelProductsAmmount;
+        private Label label1;
     }
 }

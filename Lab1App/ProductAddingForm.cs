@@ -132,7 +132,7 @@ namespace LabApp
                     product = new Dishes(textBoxName.Text, article, selectedType.Text);
                     
 
-                    int speed = ((int)SpeedOfProductVisualisation.SomePixelPerSecond);
+                    int speed = ((int)SpeedOfProductVisualisation.ThitryPixelPerSecond);
 
                     if (product is IDrawable dish)
                     {
@@ -170,7 +170,7 @@ namespace LabApp
                         {
                             furniture.VisualPosition = beginPos;
                             furniture.SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
-                            mover = new LineralMover(furniture, new Point(0, 0), (int)SpeedOfProductVisualisation.SomePixelPerSecond);
+                            mover = new LineralMover(furniture, new Point(0, 0), (int)SpeedOfProductVisualisation.ThitryPixelPerSecond);
                         }
                             
                         this.DialogResult = DialogResult.OK;
@@ -229,7 +229,7 @@ namespace LabApp
         //    beginPos = Mover.GetRandomPoint(borderPoint);
         //    product = new Dishes(textBoxName.Text, article, "Посуда");
 
-        //    int speed = ((int)SpeedOfProductVisualisation.SomePixelPerSecond);
+        //    int speed = ((int)SpeedOfProductVisualisation.ThitryPixelPerSecond);
 
         //    ((IDrawable)product).VisualPosition = beginPos;
         //    ((IDrawable)product).SizeOfVisual = new Size((int)SizeOfPaintedImgEnum.X, (int)SizeOfPaintedImgEnum.Y);
